@@ -1,36 +1,37 @@
 maxNumberOfPlayers: 2
 initialTroops: 2
 numberOfJokers: 2
+cardTypes: 3
 continents:
-    - continentId: 0
-      troopBonus: 1
-    - continentId: 1
-      troopBonus: 1
-    - continentId: 2
-      troopBonus: 1
+  - continentId: 0
+    troopBonus: 1
+  - continentId: 1
+    troopBonus: 1
+  - continentId: 2
+    troopBonus: 1
 
 territories:
-    - territoryId: 0
-      cardType: 0
-      continentId: 0
-      connects: [1, 2]
-    - territoryId: 1
-      cardType: 1
-      continentId: 1
-      connects: [0, 2]
-    - territoryId: 2
-      cardType: 2
-      continentId: 2
-      connects: [0, 1]
+  - territoryId: 0
+    cardType: 0
+    continentId: 0
+    connects: [1, 2]
+  - territoryId: 1
+    cardType: 1
+    continentId: 1
+    connects: [0, 2]
+  - territoryId: 2
+    cardType: 2
+    continentId: 2
+    connects: [0, 1]
 
 map: |
-    +-----+
-    |2%s2|
-    +-----+
-           \    +-----+
-            \___|2%s2|
-            /   +-----+
-           /
-    +-----+
-    |2%s2|
-    +-----+
+  +-----+
+  |2%s2|
+  +-----+
+         \     +-----+
+          \____|2%s2|
+          /    +-----+
+         /
+  +-----+
+  |2%s2|
+  +-----+
