@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'idea'
 }
 
 group 'dev.entze'
@@ -23,7 +24,6 @@ jar {
     manifest {
         attributes 'Sge-Type': 'game'
         attributes 'Game-Class': 'dev.entze.sge.game.risk.Risk'
-        attributes 'GameASCIIVisualiser-Class': 'dev.entze.sge.game.risk.RiskASCIIVisualiser'
     }
 }
 

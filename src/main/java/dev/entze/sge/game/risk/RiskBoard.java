@@ -3,9 +3,6 @@ package dev.entze.sge.game.risk;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 
@@ -20,7 +17,7 @@ public class RiskBoard {
 
   private final int[] nonDeployedReinforcements;
 
-  public RiskBoard(int numberOfPlayers, Map<Integer, Set<Integer>> territories, List<Integer[]> continents)
+//  public RiskBoard(int numberOfPlayers, Map<Integer, Set<Integer>> territories, List<Integer[]> continents)
 
   public RiskBoard(int numberOfPlayers, Graph<RiskTerritory, DefaultEdge> gameBoard,
       Collection<RiskCard> deckOfCards, RiskContinent[] continents) {
