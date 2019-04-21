@@ -1,4 +1,4 @@
-package dev.entze.sge.game.risk;
+package dev.entze.sge.game.risk.board;
 
 import java.util.ArrayDeque;
 import java.util.Collection;

@@ -2,6 +2,7 @@ package dev.entze.sge.game.risk;
 
 import dev.entze.sge.game.ActionRecord;
 import dev.entze.sge.game.Game;
+import dev.entze.sge.game.risk.board.RiskBoard;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;

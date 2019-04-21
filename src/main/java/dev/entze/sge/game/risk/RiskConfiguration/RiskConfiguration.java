@@ -4,21 +4,48 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 public class RiskConfiguration {
 
+  public static final RiskConfiguration RISK_DEFAULT_CONFIG = new RiskConfiguration(6, 3, 2,
+      new int[] {50, 35, 30, 25, 20}, true, 3, 2, true,
+      RiskMissionConfiguration.liberatePlayer(0, 6), Arrays.asList(), Arrays.asList(), "");
+
   private int maxNumberOfPlayers = 2;
+  private int maxAttackerDice = 3;
+  private int maxDefenderDice = 2;
   private int[] initialTroops = null;
   private boolean withCards = true;
   private int cardTypes = 3;
   private int numberOfJokers = 2;
+  private boolean withMissions = true;
+  private List<RiskMissionConfiguration> missions;
   private List<RiskContinentConfiguration> continents;
   private List<RiskTerritoryConfiguration> territories;
   private String map;
+
+  public RiskConfiguration(int maxNumberOfPlayers, int maxAttackerDice, int maxDefenderDice,
+      int[] initialTroops, boolean withCards, int cardTypes, int numberOfJokers,
+      boolean withMissions,
+      List<RiskMissionConfiguration> missions,
+      List<RiskContinentConfiguration> continents,
+      List<RiskTerritoryConfiguration> territories, String map) {
+    this.maxNumberOfPlayers = maxNumberOfPlayers;
+    this.maxAttackerDice = maxAttackerDice;
+    this.maxDefenderDice = maxDefenderDice;
+    this.initialTroops = initialTroops;
+    this.withCards = withCards;
+    this.cardTypes = cardTypes;
+    this.numberOfJokers = numberOfJokers;
+    this.withMissions = withMissions;
+    this.missions = missions;
+    this.continents = continents;
+    this.territories = territories;
+    this.map = map;
+  }
 
   public int getMaxNumberOfPlayers() {
     return maxNumberOfPlayers;
@@ -34,12 +61,11 @@ public class RiskConfiguration {
       int territoryNumber = BigDecimal.valueOf(territories.size()).setScale(-1, RoundingMode.UP)
           .intValue();
       int steps = Math.max(1, territoryNumber / 10);
-      territoryNumber *= 2;
       for (int i = 0; i < initialTroops.length; i++) {
-        initialTroops[i] = territoryNumber / (i + 2);
+        initialTroops[i] = territoryNumber;
         do {
-          territoryNumber += steps;
-        } while ((territoryNumber / (i + 3)) * (i + 3) != territoryNumber);
+          territoryNumber -= steps;
+        } while (initialTroops[i] * (i + 2) < territoryNumber * (i + 3) - (steps * 3));
       }
     }
     return initialTroops;
@@ -82,6 +108,23 @@ public class RiskConfiguration {
     this.numberOfJokers = numberOfJokers;
   }
 
+  public boolean isWithMissions() {
+    return withMissions;
+  }
+
+  public void setWithMissions(boolean withMissions) {
+    this.withMissions = withMissions;
+  }
+
+  public List<RiskMissionConfiguration> getMissions() {
+    return missions;
+  }
+
+  public void setMissions(
+      List<RiskMissionConfiguration> missions) {
+    this.missions = missions;
+  }
+
   public List<RiskContinentConfiguration> getContinents() {
     return continents;
   }
@@ -116,59 +159,5 @@ public class RiskConfiguration {
         .addPropertyParameters("territories", RiskTerritoryConfiguration.class);
     constructor.addTypeDescription(riskConfigurationDescription);
     return new Yaml(constructor);
-  }
-
-  private class RiskContinentConfiguration {
-
-    private int continentId;
-    private int troopBonus;
-
-
-    public int getContinentId() {
-      return continentId;
-    }
-
-    public void setContinentId(int continentId) {
-      this.continentId = continentId;
-    }
-
-    public int getTroopBonus() {
-      return troopBonus;
-    }
-
-    public void setTroopBonus(int troopBonus) {
-      this.troopBonus = troopBonus;
-    }
-  }
-
-  private class RiskTerritoryConfiguration {
-
-    private int territoryId;
-    private int cardType;
-    private Set<Integer> connects;
-
-    public int getTerritoryId() {
-      return territoryId;
-    }
-
-    public void setTerritoryId(int territoryId) {
-      this.territoryId = territoryId;
-    }
-
-    public int getCardType() {
-      return cardType;
-    }
-
-    public void setCardType(int cardType) {
-      this.cardType = cardType;
-    }
-
-    public Set<Integer> getConnects() {
-      return connects;
-    }
-
-    public void setConnects(Set<Integer> connects) {
-      this.connects = connects;
-    }
   }
 }

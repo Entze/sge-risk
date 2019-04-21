@@ -1,7 +1,6 @@
 package dev.entze.sge.game.risk;
 
 import dev.entze.sge.game.risk.RiskConfiguration.RiskConfiguration;
-import java.util.ArrayList;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -43,7 +42,7 @@ public class RiskTest {
   }
 
   @Test
-  public void test_yaml_dump_0(){
+  public void test_yaml_dump_0() {
     Yaml yaml = RiskConfiguration.getYaml();
 
     RiskConfiguration riskConfiguration = new RiskConfiguration();
