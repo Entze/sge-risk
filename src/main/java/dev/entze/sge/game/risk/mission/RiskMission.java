@@ -4,10 +4,19 @@ import java.util.List;
 
 public class RiskMission {
 
+  public static final int WILDCARD_ID = (-1);
+
   private RiskMissionType riskMissionType;
   private List<Integer> targetIds;
+  private int occupyingWith = 0;
 
   public RiskMission() {
+  }
+
+  public RiskMission(RiskMissionType riskMissionType, List<Integer> targetIds, int occupyingWith) {
+    this.riskMissionType = riskMissionType;
+    this.targetIds = targetIds;
+    this.occupyingWith = occupyingWith;
   }
 
   public RiskMission(RiskMissionType riskMissionType, List<Integer> targetIds) {
@@ -31,4 +40,11 @@ public class RiskMission {
     this.targetIds = targetIds;
   }
 
+  public int getOccupyingWith() {
+    return occupyingWith;
+  }
+
+  public void setOccupyingWith(int occupyingWith) {
+    this.occupyingWith = occupyingWith;
+  }
 }

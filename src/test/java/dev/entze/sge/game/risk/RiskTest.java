@@ -45,13 +45,7 @@ public class RiskTest {
   public void test_yaml_dump_0() {
     Yaml yaml = RiskConfiguration.getYaml();
 
-    RiskConfiguration riskConfiguration = new RiskConfiguration();
-    riskConfiguration.setMaxNumberOfPlayers(2);
-    riskConfiguration.setInitialTroops(2);
-    riskConfiguration.setWithCards(true);
-    riskConfiguration.setCardTypes(1);
-    riskConfiguration.setNumberOfJokers(1);
-    riskConfiguration.setMap("[%s]<-->[%s]");
+    RiskConfiguration riskConfiguration = RiskConfiguration.RISK_DEFAULT_CONFIG;// = new RiskConfiguration();
 
     System.out.println(yaml.dump(riskConfiguration));
 

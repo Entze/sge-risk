@@ -4,6 +4,11 @@ import java.util.Objects;
 
 public class RiskCard {
 
+  public static final int JOKER = 0;
+  public static final int INFANTRY = 1;
+  public static final int ARTILLERY = 2;
+  public static final int CAVALRY = 3;
+
   private final int cardId;
 
   private final int cardType;
