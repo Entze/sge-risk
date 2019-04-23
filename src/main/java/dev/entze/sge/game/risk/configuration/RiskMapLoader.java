@@ -1,4 +1,4 @@
-package dev.entze.sge.game.risk.RiskConfiguration;
+package dev.entze.sge.game.risk.configuration;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,8 +11,8 @@ import java.util.regex.Pattern;
 public class RiskMapLoader implements Callable<String> {
 
   private static final String DEFAULT_TERRITORY_REGEX = "X";
-  private final Pattern territoryPattern;
   private static final Pattern trailingWhiteSpacePattern = Pattern.compile(" *$}");
+  private final Pattern territoryPattern;
   private final String origMap;
   private final List<String> territories;
 
@@ -20,7 +20,8 @@ public class RiskMapLoader implements Callable<String> {
     this(Files.readString(mapFile), Files.readAllLines(territoriesFile));
   }
 
-  public RiskMapLoader(Path mapFile, Path territoriesFile, String territoryRegex) throws IOException {
+  public RiskMapLoader(Path mapFile, Path territoriesFile, String territoryRegex)
+      throws IOException {
     this(Files.readString(mapFile), Files.readAllLines(territoriesFile), territoryRegex);
   }
 
@@ -40,8 +41,8 @@ public class RiskMapLoader implements Callable<String> {
     Matcher matcher;
     String map = origMap;
     for (String territory : territories) {
-     matcher = territoryPattern.matcher(map);
-     map = matcher.replaceFirst("[\"+" + territory + ".getTerritoryId()+\"]");
+      matcher = territoryPattern.matcher(map);
+      map = matcher.replaceFirst("[\"+" + territory + ".getTerritoryId()+\"]");
     }
     matcher = trailingWhiteSpacePattern.matcher(map);
     map = matcher.replaceAll("");

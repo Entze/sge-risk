@@ -1,6 +1,6 @@
 package dev.entze.sge.game.risk;
 
-import dev.entze.sge.game.risk.RiskConfiguration.RiskConfiguration;
+import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -45,7 +45,7 @@ public class RiskTest {
   public void test_yaml_dump_0() {
     Yaml yaml = RiskConfiguration.getYaml();
 
-    RiskConfiguration riskConfiguration = RiskConfiguration.RISK_DEFAULT_CONFIG;// = new RiskConfiguration();
+    RiskConfiguration riskConfiguration = RiskConfiguration.RISK_DEFAULT_CONFIG;// = new configuration();
 
     System.out.println(yaml.dump(riskConfiguration));
 

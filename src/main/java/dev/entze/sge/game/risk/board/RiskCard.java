@@ -9,19 +9,13 @@ public class RiskCard {
   public static final int ARTILLERY = 2;
   public static final int CAVALRY = 3;
 
-  private final int cardId;
 
   private final int cardType;
   private final int territoryId;
 
-  public RiskCard(int cardId, int cardType, int territoryId) {
-    this.cardId = cardId;
+  public RiskCard(int cardType, int territoryId) {
     this.cardType = cardType;
     this.territoryId = territoryId;
-  }
-
-  public int getCardId() {
-    return cardId;
   }
 
   public int getCardType() {
@@ -32,7 +26,6 @@ public class RiskCard {
     return territoryId;
   }
 
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -42,11 +35,12 @@ public class RiskCard {
       return false;
     }
     RiskCard riskCard = (RiskCard) o;
-    return cardId == riskCard.cardId;
+    return cardType == riskCard.cardType &&
+        territoryId == riskCard.territoryId;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(cardId);
+    return Objects.hash(cardType, territoryId);
   }
 }

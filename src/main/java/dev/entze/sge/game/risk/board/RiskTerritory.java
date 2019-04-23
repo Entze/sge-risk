@@ -1,28 +1,20 @@
 package dev.entze.sge.game.risk.board;
 
-import java.util.Objects;
-
 public class RiskTerritory {
 
-  private final int territoryId;
   private final int continentId;
 
   private int occupantPlayerId;
   private int troops;
 
-  public RiskTerritory(int territoryId, int continentId) {
-    this(territoryId, continentId, -1, 0);
+  public RiskTerritory(int continentId) {
+    this(continentId, -1, 0);
   }
 
-  public RiskTerritory(int territoryId, int continentId, int occupantPlayerId, int troops) {
-    this.territoryId = territoryId;
+  public RiskTerritory(int continentId, int occupantPlayerId, int troops) {
     this.continentId = continentId;
     this.occupantPlayerId = occupantPlayerId;
     this.troops = troops;
-  }
-
-  public int getTerritoryId() {
-    return territoryId;
   }
 
   public int getContinentId() {
@@ -45,20 +37,5 @@ public class RiskTerritory {
     this.troops = troops;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    RiskTerritory that = (RiskTerritory) o;
-    return territoryId == that.territoryId;
-  }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(territoryId);
-  }
 }

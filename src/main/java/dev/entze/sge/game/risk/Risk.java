@@ -3,46 +3,39 @@ package dev.entze.sge.game.risk;
 import dev.entze.sge.game.ActionRecord;
 import dev.entze.sge.game.Game;
 import dev.entze.sge.game.risk.board.RiskBoard;
+import dev.entze.sge.game.risk.configuration.RiskConfiguration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class Risk implements Game<RiskAction, RiskBoard> {
 
-  private int currentPlayerId;
   private final boolean canonical;
+  private int currentPlayerId;
   private List<ActionRecord<RiskAction>> actionRecords;
   private RiskBoard board;
 
-  private final int numberOfPlayers;
 
-  private final String map;
+  public Risk(String yaml, int numberOfPlayers) {
+    this((RiskConfiguration) RiskConfiguration.getYaml().load(yaml), numberOfPlayers);
+  }
 
-  /*
-  public Risk(String yamlString) {
-    Yaml yaml = new Yaml();
-    Map<String, Object> config = yaml.load(yamlString);
-
-    int maxNumberOfPlayers = getMaximumNumberOfPlayers();
-    int numberOfJokers = 2;
-    int cardTypes = 3;
-    List<Integer[]> continents;
-  }*/
+  public Risk(RiskConfiguration configuration, int numberOfPlayers) {
+    this(0, true, Collections.emptyList(), new RiskBoard(configuration, numberOfPlayers));
+  }
 
   public Risk(Risk risk) {
-    this(risk.currentPlayerId, risk.canonical, risk.actionRecords, risk.board,
-        risk.numberOfPlayers, risk.map);
+    this(risk.currentPlayerId, risk.canonical, risk.actionRecords, risk.board);
   }
 
   public Risk(int currentPlayerId, boolean canonical,
-      List<ActionRecord<RiskAction>> actionRecords, RiskBoard board, int numberOfPlayers,
-      String map) {
+      List<ActionRecord<RiskAction>> actionRecords, RiskBoard board) {
     this.currentPlayerId = currentPlayerId;
     this.canonical = canonical;
-    this.actionRecords = actionRecords;
+    this.actionRecords = new ArrayList<>(actionRecords);
     this.board = board;
-    this.numberOfPlayers = numberOfPlayers;
-    this.map = map;
   }
 
   @Override
@@ -62,12 +55,12 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public int getNumberOfPlayers() {
-    return 0;
+    return board.getNumberOfPlayers();
   }
 
   @Override
   public int getCurrentPlayer() {
-    return 0;
+    return currentPlayerId;
   }
 
   @Override
@@ -82,7 +75,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public RiskBoard getBoard() {
-    return null;
+    return new RiskBoard(board);
   }
 
   @Override

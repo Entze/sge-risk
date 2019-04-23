@@ -1,4 +1,4 @@
-package dev.entze.sge.game.risk.RiskConfiguration;
+package dev.entze.sge.game.risk.configuration;
 
 import dev.entze.sge.game.risk.mission.RiskMission;
 import dev.entze.sge.game.risk.mission.RiskMissionType;
@@ -46,22 +46,6 @@ public class RiskMissionConfiguration {
     return defaultMissions;
   }
 
-  public RiskMissionType getMissionType() {
-    return missionType;
-  }
-
-  public void setMissionType(RiskMissionType missionType) {
-    this.missionType = missionType;
-  }
-
-  public List<Integer> getTargetIds() {
-    return targetIds;
-  }
-
-  public void setTargetIds(List<Integer> targetIds) {
-    this.targetIds = targetIds;
-  }
-
   public static List<RiskMissionConfiguration> liberatePlayer(int from, int to) {
     return IntStream.range(from, to)
         .mapToObj(i -> new RiskMissionConfiguration(RiskMissionType.LIBERATE_PLAYER,
@@ -82,7 +66,6 @@ public class RiskMissionConfiguration {
     return new HashSet<>(Arrays.asList(continents));
   }
 
-
   public static List<RiskMissionConfiguration> conquerContinents(int[][] continentGroups) {
     return Arrays.stream(continentGroups)
         .map(continents -> Arrays.stream(continents).boxed().collect(Collectors.toList()))
@@ -99,4 +82,31 @@ public class RiskMissionConfiguration {
             numberOfTroops));
   }
 
+  public RiskMissionType getMissionType() {
+    return missionType;
+  }
+
+  public void setMissionType(RiskMissionType missionType) {
+    this.missionType = missionType;
+  }
+
+  public List<Integer> getTargetIds() {
+    return targetIds;
+  }
+
+  public void setTargetIds(List<Integer> targetIds) {
+    this.targetIds = targetIds;
+  }
+
+  public RiskMission getMission() {
+    return new RiskMission(missionType, targetIds, occupyingWith);
+  }
+
+  public int getOccupyingWith() {
+    return occupyingWith;
+  }
+
+  public void setOccupyingWith(int occupyingWith) {
+    this.occupyingWith = occupyingWith;
+  }
 }

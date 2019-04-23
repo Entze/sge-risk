@@ -1,7 +1,6 @@
 package dev.entze.sge.engine.risk;
 
-import dev.entze.sge.game.risk.RiskConfiguration.RiskMapLoader;
-import java.io.File;
+import dev.entze.sge.game.risk.configuration.RiskMapLoader;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import picocli.CommandLine;

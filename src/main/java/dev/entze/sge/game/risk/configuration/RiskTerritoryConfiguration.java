@@ -1,15 +1,16 @@
-package dev.entze.sge.game.risk.RiskConfiguration;
+package dev.entze.sge.game.risk.configuration;
 
-import static dev.entze.sge.game.risk.RiskConfiguration.RiskContinentConfiguration.AFRICA;
-import static dev.entze.sge.game.risk.RiskConfiguration.RiskContinentConfiguration.ASIA;
-import static dev.entze.sge.game.risk.RiskConfiguration.RiskContinentConfiguration.AUSTRALIA;
-import static dev.entze.sge.game.risk.RiskConfiguration.RiskContinentConfiguration.EUROPE;
-import static dev.entze.sge.game.risk.RiskConfiguration.RiskContinentConfiguration.NORTH_AMERICA;
-import static dev.entze.sge.game.risk.RiskConfiguration.RiskContinentConfiguration.SOUTH_AMERICA;
 import static dev.entze.sge.game.risk.board.RiskCard.ARTILLERY;
 import static dev.entze.sge.game.risk.board.RiskCard.CAVALRY;
 import static dev.entze.sge.game.risk.board.RiskCard.INFANTRY;
+import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.AFRICA;
+import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.ASIA;
+import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.AUSTRALIA;
+import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.EUROPE;
+import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.NORTH_AMERICA;
+import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.SOUTH_AMERICA;
 
+import dev.entze.sge.game.risk.board.RiskTerritory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,8 +21,6 @@ import java.util.stream.Collectors;
 public class RiskTerritoryConfiguration {
 
 
-  //NORTH_AMERICA
-  private static int tid = 0;
   public static final RiskTerritoryConfiguration ALASKA = new RiskTerritoryConfiguration(
       ARTILLERY,
       NORTH_AMERICA);
@@ -66,7 +65,6 @@ public class RiskTerritoryConfiguration {
       CENTRAL_AMERICA,
       EASTERN_UNITED_STATES,
       ONTARIO);
-
   //SOUTH_AMERICA
   public static final RiskTerritoryConfiguration ARGENTINA = new RiskTerritoryConfiguration(
       INFANTRY,
@@ -86,7 +84,6 @@ public class RiskTerritoryConfiguration {
       CENTRAL_AMERICA,
       BRAZIL,
       PERU);
-
   //EUROPE
   public static final RiskTerritoryConfiguration GREAT_BRITAIN = new RiskTerritoryConfiguration(
       INFANTRY,
@@ -122,7 +119,6 @@ public class RiskTerritoryConfiguration {
       GREAT_BRITAIN,
       NORTHERN_EUROPE,
       SOUTHERN_EUROPE);
-
   //AFRICA
   public static final RiskTerritoryConfiguration CENTRAL_AFRICA = new RiskTerritoryConfiguration(
       ARTILLERY,
@@ -154,7 +150,6 @@ public class RiskTerritoryConfiguration {
       CENTRAL_AFRICA,
       EAST_AFRICA,
       MADAGASCAR);
-
   //ASIA
   public static final RiskTerritoryConfiguration AFGHANISTAN = new RiskTerritoryConfiguration(
       INFANTRY,
@@ -181,7 +176,6 @@ public class RiskTerritoryConfiguration {
       ALASKA,
       IRKUTSK,
       JAPAN);
-
   public static final RiskTerritoryConfiguration MIDDLE_EAST = new RiskTerritoryConfiguration(
       ARTILLERY,
       ASIA,
@@ -191,7 +185,6 @@ public class RiskTerritoryConfiguration {
       EGYPT,
       AFGHANISTAN,
       INDIA);
-
   public static final RiskTerritoryConfiguration MONGOLIA = new RiskTerritoryConfiguration(
       CAVALRY,
       ASIA,
@@ -199,20 +192,17 @@ public class RiskTerritoryConfiguration {
       IRKUTSK,
       JAPAN,
       KAMCHATKA);
-
   public static final RiskTerritoryConfiguration SIAM = new RiskTerritoryConfiguration(
       CAVALRY,
       ASIA,
       CHINA,
       INDIA);
-
   public static final RiskTerritoryConfiguration SIBERIA = new RiskTerritoryConfiguration(
       INFANTRY,
       ASIA,
       CHINA,
       IRKUTSK,
       MONGOLIA);
-
   public static final RiskTerritoryConfiguration URAL = new RiskTerritoryConfiguration(
       INFANTRY,
       ASIA,
@@ -220,14 +210,12 @@ public class RiskTerritoryConfiguration {
       AFGHANISTAN,
       CHINA,
       SIBERIA);
-
   public static final RiskTerritoryConfiguration YAKUTSK = new RiskTerritoryConfiguration(
       ARTILLERY,
       ASIA,
       IRKUTSK,
       KAMCHATKA,
       SIBERIA);
-
   //AUSTRALIA
   public static final RiskTerritoryConfiguration EASTERN_AUSTRALIA = new RiskTerritoryConfiguration(
       CAVALRY,
@@ -246,7 +234,6 @@ public class RiskTerritoryConfiguration {
           ARTILLERY,
           AUSTRALIA,
           EASTERN_AUSTRALIA, INDONESIA, NEW_GUINEA);
-
   public static final Collection<RiskTerritoryConfiguration> allTerritories = Arrays
       .asList(ALASKA, ALBERTA, CENTRAL_AMERICA, EASTERN_UNITED_STATES, GREENLAND,
           NORTHWEST_TERRITORY, ONTARIO, QUEBEC, WESTERN_UNITED_STATES, ARGENTINA, BRAZIL, PERU,
@@ -255,7 +242,8 @@ public class RiskTerritoryConfiguration {
           SOUTH_AFRICA, AFGHANISTAN, CHINA, INDIA, IRKUTSK, JAPAN, KAMCHATKA, MIDDLE_EAST, MONGOLIA,
           SIAM, SIBERIA, URAL, YAKUTSK, EASTERN_AUSTRALIA, INDONESIA, NEW_GUINEA,
           WESTERN_AUSTRALIA);
-
+  //NORTH_AMERICA
+  private static int tid = 0;
   private int territoryId;
   private int cardType;
   private int continentId;
@@ -284,6 +272,16 @@ public class RiskTerritoryConfiguration {
     this.connects = connects;
   }
 
+  public static Set<Integer> getConnectsSet(RiskTerritoryConfiguration... configurations) {
+    return Arrays.stream(configurations)
+        .map(configuration -> configuration.continentId)
+        .collect(Collectors.toCollection(TreeSet::new));
+  }
+
+  public RiskTerritory getTerritory() {
+    return new RiskTerritory(continentId);
+  }
+
   public int getTerritoryId() {
     return territoryId;
   }
@@ -306,12 +304,6 @@ public class RiskTerritoryConfiguration {
 
   public void setConnects(Set<Integer> connects) {
     this.connects = connects;
-  }
-
-  public static Set<Integer> getConnectsSet(RiskTerritoryConfiguration... configurations) {
-    return Arrays.stream(configurations)
-        .map(configuration -> configuration.continentId)
-        .collect(Collectors.toCollection(TreeSet::new));
   }
 
 }

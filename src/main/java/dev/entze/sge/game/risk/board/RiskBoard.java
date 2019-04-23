@@ -1,32 +1,183 @@
 package dev.entze.sge.game.risk.board;
 
+import dev.entze.sge.game.risk.configuration.RiskConfiguration;
+import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
+import dev.entze.sge.game.risk.configuration.RiskMissionConfiguration;
+import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
+import dev.entze.sge.game.risk.mission.RiskMission;
+import dev.entze.sge.game.risk.mission.RiskMissionType;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleGraph;
 
 public class RiskBoard {
 
-  private final Graph<RiskTerritory, DefaultEdge> gameBoard;
+  //settings
+  private final int numberOfPlayers;
+  private final int maxAttackerDice;
+  private final int maxDefenderDice;
+
+  private final boolean withCards;
+  private final int cardTypesWithoutJoker;
+
+  private final int reinforcementAtLeast;
+  private final int reinforcementThreshold;
+  private final boolean occupyOnlyWithAttackingArmies;
+  private final boolean fortifyOnlyFromSingleTerritory;
+  private final boolean fortifyOnlyWithNonFightingArmies;
+  private final boolean withMissions;
+
+  //board
+  private final Graph<Integer, DefaultEdge> gameBoard;
+  private final Map<Integer, RiskTerritory> territories;
   private final Deque<RiskCard> deckOfCards;
+  private final RiskMission[] playerMissions;
 
   private final RiskCard[][] playerCards;
 
-  private final RiskContinent[] continents;
+  private final Map<Integer, RiskContinent> continents;
 
   private final int[] nonDeployedReinforcements;
 
-//  public RiskBoard(int numberOfPlayers, Map<Integer, Set<Integer>> territories, List<Integer[]> continents)
+  private final String map;
 
-  public RiskBoard(int numberOfPlayers, Graph<RiskTerritory, DefaultEdge> gameBoard,
-      Collection<RiskCard> deckOfCards, RiskContinent[] continents) {
-    this.gameBoard = gameBoard;
-    this.deckOfCards = new ArrayDeque<>(deckOfCards);
-    this.playerCards = new RiskCard[numberOfPlayers][6];
-    this.continents = continents;
-    this.nonDeployedReinforcements = new int[numberOfPlayers];
+  public RiskBoard(RiskConfiguration configuration, int numberOfPlayers) {
+    this.numberOfPlayers = numberOfPlayers;
+    maxAttackerDice = configuration.getMaxAttackerDice();
+    maxDefenderDice = configuration.getMaxDefenderDice();
+    withCards = configuration.isWithCards();
+    cardTypesWithoutJoker = configuration.getCardTypesWithoutJoker();
+    reinforcementAtLeast = configuration.getReinforcementAtLeast();
+    reinforcementThreshold = configuration.getReinforcementThreshold();
+    occupyOnlyWithAttackingArmies = configuration.isOccupyOnlyWithAttackingArmies();
+    fortifyOnlyFromSingleTerritory = configuration.isFortifyOnlyFromSingleTerritory();
+    fortifyOnlyWithNonFightingArmies = configuration.isFortifyOnlyWithNonFightingArmies();
+    withMissions = configuration.isWithMissions();
+    if (withMissions) {
+      List<RiskMission> missionList = new ArrayList<>();
+      for (RiskMissionConfiguration mission : configuration.getMissions()) {
+        missionList.add(mission.getMission());
+      }
+      missionList.removeIf(
+          mission -> mission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER && mission
+              .getTargetIds().stream().anyMatch(id -> id >= numberOfPlayers));
+      Collections.shuffle(missionList);
+      playerMissions = new RiskMission[numberOfPlayers];
+      for (int i = 0; i < playerMissions.length; i++) {
+        playerMissions[i] = missionList.get(i);
+        int finalI = i;
+        if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
+            && playerMissions[i].getTargetIds().stream().anyMatch(id -> id == finalI)) {
+          playerMissions[i] = RiskMission.FALLBACK;
+        }
+      }
+    } else {
+      playerMissions = null;
+    }
+    Set<RiskTerritoryConfiguration> territoriesConfiguration = configuration.getTerritories();
+
+    territories = Collections
+        .unmodifiableMap(territoriesConfiguration.stream().collect(
+            Collectors.toMap(RiskTerritoryConfiguration::getTerritoryId,
+                RiskTerritoryConfiguration::getTerritory, (a, b) -> b)));
+
+    gameBoard = new SimpleGraph<>(DefaultEdge.class);
+    for (RiskTerritoryConfiguration territoryConfiguration : territoriesConfiguration) {
+      gameBoard.addVertex(territoryConfiguration.getTerritoryId());
+    }
+    for (RiskTerritoryConfiguration territoryConfiguration : territoriesConfiguration) {
+      for (Integer connect : territoryConfiguration.getConnects()) {
+        gameBoard.addEdge(territoryConfiguration.getTerritoryId(), connect);
+      }
+    }
+
+    if (withCards) {
+      List<RiskCard> cardList = territoriesConfiguration.stream().map(
+          territoryConfiguration -> new RiskCard(territoryConfiguration.getCardType(),
+              territoryConfiguration.getTerritoryId()))
+          .collect(Collectors.toCollection(() -> new ArrayList<>(
+              territoriesConfiguration.size() + configuration.getNumberOfJokers())));
+      for (int i = 0; i < configuration.getNumberOfJokers(); i++) {
+        cardList.add(new RiskCard(RiskCard.JOKER, -1));
+      }
+      Collections.shuffle(cardList);
+      deckOfCards = new ArrayDeque<>(cardList);
+      playerCards = new RiskCard[numberOfPlayers][cardTypesWithoutJoker * 3];
+    } else {
+      deckOfCards = null;
+      playerCards = null;
+    }
+    Set<RiskContinentConfiguration> continentsConfiguration = configuration.getContinents();
+
+    this.continents = Collections
+        .unmodifiableMap(continentsConfiguration.stream().collect(Collectors
+            .toUnmodifiableMap(RiskContinentConfiguration::getContinentId,
+                RiskContinentConfiguration::getContinent, (a, b) -> b)));
+
+    nonDeployedReinforcements = new int[numberOfPlayers];
+    Arrays.fill(nonDeployedReinforcements, configuration.getInitialTroops()[numberOfPlayers - 2]);
+    if (!configuration.isChooseInitialTerritories()) {
+      List<Integer> ids = new ArrayList<>(territories.keySet());
+      Collections.shuffle(ids);
+      for (int p = 0; p < ids.size(); p++) {
+        territories.get(ids.get(p)).setOccupantPlayerId(p % numberOfPlayers);
+        nonDeployedReinforcements[p % numberOfPlayers]--;
+      }
+    }
+    map = configuration.getMap();
   }
 
+  public RiskBoard(RiskBoard riskBoard) {
+    this(riskBoard.numberOfPlayers, riskBoard.maxAttackerDice, riskBoard.maxDefenderDice,
+        riskBoard.withCards, riskBoard.cardTypesWithoutJoker,
+        riskBoard.reinforcementAtLeast, riskBoard.reinforcementThreshold,
+        riskBoard.occupyOnlyWithAttackingArmies, riskBoard.fortifyOnlyFromSingleTerritory,
+        riskBoard.fortifyOnlyWithNonFightingArmies, riskBoard.withMissions,
+        riskBoard.gameBoard, riskBoard.territories, riskBoard.deckOfCards, riskBoard.playerMissions,
+        riskBoard.playerCards,
+        riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.map);
+  }
 
+  public RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice, boolean withCards,
+      int cardTypesWithoutJoker, int reinforcementAtLeast,
+      int reinforcementThreshold, boolean occupyOnlyWithAttackingArmies,
+      boolean fortifyOnlyFromSingleTerritory, boolean fortifyOnlyWithNonFightingArmies,
+      boolean withMissions,
+      Graph<Integer, DefaultEdge> gameBoard, Map<Integer, RiskTerritory> territories,
+      Collection<RiskCard> deckOfCards, RiskMission[] playerMissions, RiskCard[][] playerCards,
+      Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements, String map) {
+    this.numberOfPlayers = numberOfPlayers;
+    this.maxAttackerDice = maxAttackerDice;
+    this.maxDefenderDice = maxDefenderDice;
+    this.withCards = withCards;
+    this.cardTypesWithoutJoker = cardTypesWithoutJoker;
+    this.reinforcementAtLeast = reinforcementAtLeast;
+    this.reinforcementThreshold = reinforcementThreshold;
+    this.occupyOnlyWithAttackingArmies = occupyOnlyWithAttackingArmies;
+    this.fortifyOnlyFromSingleTerritory = fortifyOnlyFromSingleTerritory;
+    this.fortifyOnlyWithNonFightingArmies = fortifyOnlyWithNonFightingArmies;
+    this.withMissions = withMissions;
+    this.gameBoard = gameBoard;
+    this.territories = territories;
+    this.deckOfCards = new ArrayDeque<>(deckOfCards);
+    this.playerMissions = playerMissions.clone();
+    this.playerCards = playerCards.clone();
+    this.continents = continents;
+    this.nonDeployedReinforcements = nonDeployedReinforcements.clone();
+    this.map = map;
+  }
+
+  public int getNumberOfPlayers() {
+    return numberOfPlayers;
+  }
 }
