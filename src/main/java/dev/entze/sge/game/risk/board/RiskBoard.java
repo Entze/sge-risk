@@ -75,7 +75,7 @@ public class RiskBoard {
       playerMissions = new RiskMission[numberOfPlayers];
       for (int i = 0; i < playerMissions.length; i++) {
         playerMissions[i] = missionList.get(i);
-        int finalI = i;
+        final int finalI = i;
         if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
             && playerMissions[i].getTargetIds().stream().anyMatch(id -> id == finalI)) {
           playerMissions[i] = RiskMission.FALLBACK;
@@ -86,10 +86,10 @@ public class RiskBoard {
     }
     Set<RiskTerritoryConfiguration> territoriesConfiguration = configuration.getTerritories();
 
-    territories = Collections
-        .unmodifiableMap(territoriesConfiguration.stream().collect(
-            Collectors.toMap(RiskTerritoryConfiguration::getTerritoryId,
-                RiskTerritoryConfiguration::getTerritory, (a, b) -> b)));
+    territories = territoriesConfiguration.stream().collect(
+            Collectors.toUnmodifiableMap(RiskTerritoryConfiguration::getTerritoryId,
+                RiskTerritoryConfiguration::getTerritory, (a, b) -> b));
+
 
     gameBoard = new SimpleGraph<>(DefaultEdge.class);
     for (RiskTerritoryConfiguration territoryConfiguration : territoriesConfiguration) {
@@ -117,12 +117,12 @@ public class RiskBoard {
       deckOfCards = null;
       playerCards = null;
     }
+
     Set<RiskContinentConfiguration> continentsConfiguration = configuration.getContinents();
 
-    this.continents = Collections
-        .unmodifiableMap(continentsConfiguration.stream().collect(Collectors
+    this.continents = continentsConfiguration.stream().collect(Collectors
             .toUnmodifiableMap(RiskContinentConfiguration::getContinentId,
-                RiskContinentConfiguration::getContinent, (a, b) -> b)));
+                RiskContinentConfiguration::getContinent, (a, b) -> b));
 
     nonDeployedReinforcements = new int[numberOfPlayers];
     Arrays.fill(nonDeployedReinforcements, configuration.getInitialTroops()[numberOfPlayers - 2]);
@@ -134,6 +134,7 @@ public class RiskBoard {
         nonDeployedReinforcements[p % numberOfPlayers]--;
       }
     }
+
     map = configuration.getMap();
   }
 
