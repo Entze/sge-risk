@@ -253,16 +253,15 @@ public class RiskConfiguration {
   }
 
   public void setInitialTroops(int... initialTroops) {
+    this.initialTroops = new int[maxNumberOfPlayers - 1];
     for (int i = 0; i < initialTroops.length && i < this.initialTroops.length; i++) {
       this.initialTroops[i] = initialTroops[i];
     }
   }
 
   public void setInitialTroops(int initialTroops) {
-    getInitialTroops();
-    if (this.initialTroops != null) {
-      Arrays.fill(this.initialTroops, initialTroops);
-    }
+    this.initialTroops = new int[maxNumberOfPlayers - 1];
+    Arrays.fill(this.initialTroops, initialTroops);
   }
 
   public int getMaxNumberOfPlayers() {

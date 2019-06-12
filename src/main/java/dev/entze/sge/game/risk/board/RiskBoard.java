@@ -63,7 +63,7 @@ public class RiskBoard {
     fortifyOnlyFromSingleTerritory = configuration.isFortifyOnlyFromSingleTerritory();
     fortifyOnlyWithNonFightingArmies = configuration.isFortifyOnlyWithNonFightingArmies();
     withMissions = configuration.isWithMissions();
-    if (withMissions) {
+    if (withMissions && !configuration.getMissions().isEmpty()) {
       List<RiskMission> missionList = new ArrayList<>();
       for (RiskMissionConfiguration mission : configuration.getMissions()) {
         missionList.add(mission.getMission());
@@ -130,7 +130,9 @@ public class RiskBoard {
       List<Integer> ids = new ArrayList<>(territories.keySet());
       Collections.shuffle(ids);
       for (int p = 0; p < ids.size(); p++) {
-        territories.get(ids.get(p)).setOccupantPlayerId(p % numberOfPlayers);
+        RiskTerritory territory = territories.get(ids.get(p));
+        territory.setOccupantPlayerId(p % numberOfPlayers);
+        territory.setTroops(1);
         nonDeployedReinforcements[p % numberOfPlayers]--;
       }
     }
@@ -170,9 +172,9 @@ public class RiskBoard {
     this.withMissions = withMissions;
     this.gameBoard = gameBoard;
     this.territories = territories;
-    this.deckOfCards = new ArrayDeque<>(deckOfCards);
-    this.playerMissions = playerMissions.clone();
-    this.playerCards = playerCards.clone();
+    this.deckOfCards = deckOfCards != null ? new ArrayDeque<>(deckOfCards) : null;
+    this.playerMissions = playerMissions != null ? playerMissions.clone() : null;
+    this.playerCards = playerCards != null ? playerCards.clone() : null;
     this.continents = continents;
     this.nonDeployedReinforcements = nonDeployedReinforcements.clone();
     this.map = map;

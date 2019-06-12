@@ -1,37 +1,43 @@
+!!dev.entze.sge.game.risk.configuration.RiskConfiguration
+cardTypesWithoutJoker: 3
+chooseInitialTerritories: false
+continents: !!set
+  ? {continentId: 0, troopBonus: 1}
+    : null
+fortifyOnlyFromSingleTerritory: true
+fortifyOnlyWithNonFightingArmies: false
+initialTroops: [3]
+map: |-
+  +-----+
+  |2[0]2|
+  +-----+
+  7\5+-----+
+  8\____|2[1]2|
+  8/4+-----+
+  7/
+  +-----+
+  |2[2]2|
+  +-----+
+maxAttackerDice: 3
+maxDefenderDice: 2
 maxNumberOfPlayers: 2
-initialTroops: 2
+missions: !!set {}
 numberOfJokers: 2
-cardTypes: 3
-continents:
-  - continentId: 0
-    troopBonus: 1
-  - continentId: 1
-    troopBonus: 1
-  - continentId: 2
-    troopBonus: 1
-
-territories:
-  - territoryId: 0
-    cardType: 0
-    continentId: 0
-    connects: [1, 2]
-  - territoryId: 1
-    cardType: 1
-    continentId: 1
-    connects: [0, 2]
-  - territoryId: 2
-    cardType: 2
-    continentId: 2
-    connects: [0, 1]
-
-map: |
-  +-----+
-  |2%s2|
-  +-----+
-         \     +-----+
-          \____|2%s2|
-          /    +-----+
-         /
-  +-----+
-  |2%s2|
-  +-----+
+occupyOnlyWithAttackingArmies: false
+reinforcementAtLeast: 3
+reinforcementThreshold: 3
+territories: !!set
+  ? cardType: 2
+    connects: !!set {0: null, 1: null}
+    territoryId: 2
+    : null
+  ? cardType: 0
+    connects: !!set {1: null, 2: null}
+    territoryId: 0
+    : null
+  ? cardType: 1
+    connects: !!set {2: null, 0: null}
+    territoryId: 1
+    : null
+withCards: true
+withMissions: true
