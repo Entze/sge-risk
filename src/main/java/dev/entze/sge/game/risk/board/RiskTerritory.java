@@ -17,6 +17,12 @@ public class RiskTerritory {
     this.troops = troops;
   }
 
+  public RiskTerritory(RiskTerritory riskTerritory) {
+    this.continentId = riskTerritory.continentId;
+    this.occupantPlayerId = riskTerritory.occupantPlayerId;
+    this.troops = riskTerritory.troops;
+  }
+
   public int getContinentId() {
     return continentId;
   }

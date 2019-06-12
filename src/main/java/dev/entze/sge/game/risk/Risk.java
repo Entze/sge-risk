@@ -112,4 +112,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   public String toString() {
     return "Risk: " + currentPlayerId + ", " + Arrays.toString(getGameUtilityValue());
   }
+
+  @Override
+  public String toTextRepresentation() {
+    return null;
+  }
 }

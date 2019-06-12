@@ -151,6 +151,7 @@ public class RiskBoard {
         riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.map);
   }
 
+  //TODO: make deep copies of ALL the containers
   public RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice, boolean withCards,
       int cardTypesWithoutJoker, int reinforcementAtLeast,
       int reinforcementThreshold, boolean occupyOnlyWithAttackingArmies,
@@ -183,4 +184,13 @@ public class RiskBoard {
   public int getNumberOfPlayers() {
     return numberOfPlayers;
   }
+
+  public Set<Integer> getTerritoryIds() {
+    return territories.keySet();
+  }
+
+  public int getTerritoryOccupantId(int territoryId){
+    return territories.containsKey(territoryId) ? territories.get(territoryId).getOccupantPlayerId() : -1;
+  }
+
 }
