@@ -87,9 +87,8 @@ public class RiskBoard {
     Set<RiskTerritoryConfiguration> territoriesConfiguration = configuration.getTerritories();
 
     territories = territoriesConfiguration.stream().collect(
-            Collectors.toUnmodifiableMap(RiskTerritoryConfiguration::getTerritoryId,
-                RiskTerritoryConfiguration::getTerritory, (a, b) -> b));
-
+        Collectors.toUnmodifiableMap(RiskTerritoryConfiguration::getTerritoryId,
+            RiskTerritoryConfiguration::getTerritory, (a, b) -> b));
 
     gameBoard = new SimpleGraph<>(DefaultEdge.class);
     for (RiskTerritoryConfiguration territoryConfiguration : territoriesConfiguration) {
@@ -121,8 +120,8 @@ public class RiskBoard {
     Set<RiskContinentConfiguration> continentsConfiguration = configuration.getContinents();
 
     this.continents = continentsConfiguration.stream().collect(Collectors
-            .toUnmodifiableMap(RiskContinentConfiguration::getContinentId,
-                RiskContinentConfiguration::getContinent, (a, b) -> b));
+        .toUnmodifiableMap(RiskContinentConfiguration::getContinentId,
+            RiskContinentConfiguration::getContinent, (a, b) -> b));
 
     nonDeployedReinforcements = new int[numberOfPlayers];
     Arrays.fill(nonDeployedReinforcements, configuration.getInitialTroops()[numberOfPlayers - 2]);
@@ -172,7 +171,7 @@ public class RiskBoard {
     this.fortifyOnlyWithNonFightingArmies = fortifyOnlyWithNonFightingArmies;
     this.withMissions = withMissions;
     this.gameBoard = gameBoard;
-    this.territories = territories;
+    this.territories = Collections.unmodifiableMap(copyTerritories(territories));
     this.deckOfCards = deckOfCards != null ? new ArrayDeque<>(deckOfCards) : null;
     this.playerMissions = playerMissions != null ? playerMissions.clone() : null;
     this.playerCards = playerCards != null ? playerCards.clone() : null;
@@ -185,12 +184,31 @@ public class RiskBoard {
     return numberOfPlayers;
   }
 
+  public Map<Integer, RiskTerritory> getTerritories() {
+    return territories;
+  }
+
   public Set<Integer> getTerritoryIds() {
     return territories.keySet();
   }
 
-  public int getTerritoryOccupantId(int territoryId){
-    return territories.containsKey(territoryId) ? territories.get(territoryId).getOccupantPlayerId() : -1;
+  public int getTerritoryOccupantId(int territoryId) {
+    return territories.containsKey(territoryId) ? territories.get(territoryId).getOccupantPlayerId()
+        : -1;
+  }
+
+  public int getTerritoryTroops(int territoryId) {
+    return territories.containsKey(territoryId) ? territories.get(territoryId).getTroops() : 0;
+  }
+
+  public String getMap() {
+    return map;
+  }
+
+  private static Map<Integer, RiskTerritory> copyTerritories(
+      Map<Integer, RiskTerritory> territories) {
+    return territories.keySet().stream().collect(Collectors
+        .toMap(i -> i, i -> new RiskTerritory(territories.get(i)), (a, b) -> b));
   }
 
 }

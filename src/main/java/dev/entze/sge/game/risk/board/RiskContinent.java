@@ -8,6 +8,10 @@ public class RiskContinent {
     this.troopBonus = troopBonus;
   }
 
+  public RiskContinent(RiskContinent riskContinent) {
+    this.troopBonus = riskContinent.troopBonus;
+  }
+
   public int getTroopBonus() {
     return troopBonus;
   }
