@@ -150,7 +150,6 @@ public class RiskBoard {
         riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.map);
   }
 
-  //TODO: make deep copies of ALL the containers
   public RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice, boolean withCards,
       int cardTypesWithoutJoker, int reinforcementAtLeast,
       int reinforcementThreshold, boolean occupyOnlyWithAttackingArmies,
