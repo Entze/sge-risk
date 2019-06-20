@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public class Risk implements Game<RiskAction, RiskBoard> {
 
@@ -115,9 +114,6 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   public String toString() {
     return "Risk: " + currentPlayerId + ", " + Arrays.toString(getGameUtilityValue());
   }
-
-  private static final String territoryInfoRegex = "\\[(?<id>[0-9]+)]";
-  private static final Pattern territoryInfoPattern = Pattern.compile(territoryInfoRegex);
 
   @Override
   public String toTextRepresentation() {
