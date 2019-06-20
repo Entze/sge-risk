@@ -104,9 +104,7 @@ public class RiskAction {
   @Override
   public String toString() {
     if (srcId == targetId && srcId == -1) {
-      int attackerCasualties = this.attackerCasualties();
-      int defenderCasualties = this.defenderCasualties();
-      return attackerCasualties + "X" + defenderCasualties;
+      return String.format("%dX%d", this.attackerCasualties(), this.defenderCasualties());
     }
 
     if (srcId == -1) {
