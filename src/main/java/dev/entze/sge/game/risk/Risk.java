@@ -116,22 +116,23 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     return "Risk: " + currentPlayerId + ", " + Arrays.toString(getGameUtilityValue());
   }
 
-  private static final String territoryInfoRegex = "\\[(?<id>[0-9]+)\\]";
+  private static final String territoryInfoRegex = "\\[(?<id>[0-9]+)]";
   private static final Pattern territoryInfoPattern = Pattern.compile(territoryInfoRegex);
 
   @Override
   public String toTextRepresentation() {
-    String map = board.getMap();
+    StringBuilder map = new StringBuilder(board.getMap());
     final Map<Integer, RiskTerritory> territories = board.getTerritories();
+
     for (Integer i : territories.keySet()) {
       String target = "[" + i + "]";
-      String replacement = String
-          .format("%d:%d", territories.get(i).getOccupantPlayerId(),
-              territories.get(i).getTroops());
+      int occupantPlayerId = territories.get(i).getOccupantPlayerId();
+      int troops = territories.get(i).getTroops();
+      String replacement = String.format("%d:%d", occupantPlayerId, troops);
       int pre = map.indexOf(target);
       int post = pre + (target.length() - 1);
 
-      int toCutWhiteSpace = replacement.length() - target.length();
+      int toCutWhiteSpace = replacement.length() - 1;
 
       while (toCutWhiteSpace != 0) {
         int cutFrom;
@@ -146,31 +147,43 @@ public class Risk implements Game<RiskAction, RiskBoard> {
           c = map.charAt(cutFrom);
         } while (!(('0' < c && c <= '9') || ('a' <= c && c < 'z')));
 
-        //TODO: INCREASE or DECREASE depending on context
-        c = decreaseLexicographical(c);
-        map = String.format("%s%c%s", map.substring(0, cutFrom), c, map.substring(cutFrom + 1));
+        if (toCutWhiteSpace > 0) {
+          c = decreaseLexicographical(c);
+        } else {
+          c = increaseLexicographical(c);
+        }
+        map.setCharAt(cutFrom, c);
 
         toCutWhiteSpace += toCutWhiteSpace < 0 ? 1 : -1; // approach 0 step by step
       }
 
-      map = map.replace(target, "[" + replacement + "]");
-
+      map = map.replace(pre, post + 1, "[" + replacement + "]");
     }
 
-    /*
-    //TODO: only replace numbers which are not part of the score
-    StringBuilder whitespace = new StringBuilder();
-    for (int i = 0; i < ('z' - 'a' + 10); i++) {
-      whitespace.append(' ');
+    {
+      int i = 0;
+      boolean consume = true;
+      while (i < map.length()) {
+        char c = map.charAt(i);
+        if (consume) {
+          if (c == '[') {
+            consume = false;
+            map.deleteCharAt(i);
+          } else if (('0' <= c && c <= '9') || ('a' <= c && c <= 'z')) {
+            String whitespace = whitespace(c);
+            map.replace(i, i + 1, whitespace);
+            i += whitespace.length() - 1;
+          }
+        } else if (c == ']') {
+          consume = true;
+          map.deleteCharAt(i);
+          i--;
+        }
+        i++;
+      }
     }
 
-    for (char c = 'z'; c >= '1';
-        c = decreaseLexicographical(c), whitespace.substring(0, whitespace.length() - 1)) {
-      map = map.replaceAll("" + c, whitespace.toString());
-    }
-    map = map.replaceAll("0", "");
-*/
-    return map;
+    return map.toString();
   }
 
   private static char decreaseLexicographical(char c) {
@@ -193,6 +206,22 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     return ++c;
+  }
+
+  private static String whitespace(char c) {
+    if ('a' <= c) {
+      return whitespace((c - 'a') + 10);
+    }
+    return whitespace(c - '0');
+  }
+
+  private static String whitespace(int n) {
+    String ret = "";
+    for (int i = 0; i < n; i++) {
+      ret = ret.concat(" ");
+    }
+
+    return ret;
   }
 
 }
