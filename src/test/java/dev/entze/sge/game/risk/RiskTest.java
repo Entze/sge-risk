@@ -1,6 +1,8 @@
 package dev.entze.sge.game.risk;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import dev.entze.sge.game.risk.board.RiskBoard;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
@@ -124,5 +126,82 @@ public class RiskTest {
   public void test_game_doAction() {
 
   }
+
+  @Test
+  public void test_game_doAction_initialSelect() {
+
+    RiskConfiguration riskConfiguration = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    riskConfiguration.setChooseInitialTerritories(true);
+
+    Risk risk = new Risk(riskConfiguration, 2);
+
+    assertEquals(Set.of(RiskAction.select(0), RiskAction.select(1), RiskAction.select(2)),
+        risk.getPossibleActions());
+
+    assertEquals(0, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+
+    assertEquals(1, risk.getCurrentPlayer());
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(0));
+    assertEquals(-1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(0, risk.getBoard().getTerritoryTroops(1));
+    assertEquals(-1, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(0, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(Set.of(RiskAction.select(1), RiskAction.select(2)),
+        risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(0));
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(1));
+    assertEquals(-1, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(0, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(Set.of(RiskAction.select(2)),
+        risk.getPossibleActions());
+
+    assertEquals(0, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(0));
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(1));
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(2));
+
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_doAction_initialSelect_err_selecting_already_selected() {
+
+    RiskConfiguration riskConfiguration = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    riskConfiguration.setChooseInitialTerritories(true);
+
+    Risk risk = new Risk(riskConfiguration, 2);
+
+    assertEquals(0, risk.getCurrentPlayer());
+
+    assertEquals(Set.of(RiskAction.select(0), RiskAction.select(1), RiskAction.select(2)),
+        risk.getPossibleActions());
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+
+    assertEquals(Set.of(RiskAction.select(1), RiskAction.select(2)),
+        risk.getPossibleActions());
+
+    assertFalse(risk.isValidAction(RiskAction.select(0)));
+
+    risk.doAction(RiskAction.select(0));
+    fail();
+
+  }
+
 
 }

@@ -200,6 +200,7 @@ public class RiskBoard {
     return territories.containsKey(territoryId) ? territories.get(territoryId).getTroops() : 0;
   }
 
+
   public String getMap() {
     return map;
   }
@@ -210,4 +211,10 @@ public class RiskBoard {
         .toMap(i -> i, i -> new RiskTerritory(territories.get(i)), (a, b) -> b));
   }
 
+  public void initialSelect(int selected, int playerId) {
+    RiskTerritory territory = territories.get(selected);
+    territory.setOccupantPlayerId(playerId);
+    territory.setTroops(1);
+    nonDeployedReinforcements[playerId]--;
+  }
 }

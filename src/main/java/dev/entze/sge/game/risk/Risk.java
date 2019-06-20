@@ -10,7 +10,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Risk implements Game<RiskAction, RiskBoard> {
 
@@ -37,7 +39,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     this.currentPlayerId = currentPlayerId;
     this.canonical = canonical;
     this.actionRecords = new ArrayList<>(actionRecords);
-    this.board = board;
+    this.board = new RiskBoard(board);
   }
 
   @Override
@@ -72,7 +74,28 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public Set<RiskAction> getPossibleActions() {
+    if (isInitialSelect()) {
+      return initialSelectGPA();
+    }
     return null;
+  }
+
+  private boolean initialSelect = true;
+
+  private boolean isInitialSelect() {
+    if (initialSelect && (board.getTerritories().values().stream().anyMatch(
+        t -> !(0 <= t.getOccupantPlayerId() && t.getOccupantPlayerId() < getNumberOfPlayers())))) {
+      return true;
+    }
+    initialSelect = false;
+    return false;
+  }
+
+  private Set<RiskAction> initialSelectGPA() {
+    return board.getTerritories().entrySet().stream().filter(
+        t -> !(0 <= t.getValue().getOccupantPlayerId()
+            && t.getValue().getOccupantPlayerId() < getNumberOfPlayers())).mapToInt(Entry::getKey)
+        .mapToObj(RiskAction::select).collect(Collectors.toSet());
   }
 
   @Override
@@ -82,12 +105,43 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public boolean isValidAction(RiskAction riskAction) {
+    if (isInitialSelect()) {
+      int selected = riskAction.selected();
+      return board.getTerritoryIds().contains(selected) && !(
+          0 <= board.getTerritoryOccupantId(selected)
+              && board.getTerritoryOccupantId(selected) < getNumberOfPlayers());
+    }
     return false;
   }
 
   @Override
   public Game<RiskAction, RiskBoard> doAction(RiskAction riskAction) {
+    if (isInitialSelect()) {
+      return initialSelectDA(riskAction);
+    }
     return null;
+  }
+
+  private Risk initialSelectDA(RiskAction riskAction) {
+    int selected = riskAction.selected();
+
+    if (!board.getTerritoryIds().contains(selected)) {
+      throw new IllegalArgumentException(
+          "Specified territoryId is not assigned a territory. Could therefore not select");
+    }
+
+    if (0 <= board.getTerritoryOccupantId(selected)
+        && board.getTerritoryOccupantId(selected) < getNumberOfPlayers()) {
+      throw new IllegalArgumentException(
+          "Specified territoryId has already an occupant. Could therefore not select");
+    }
+
+    Risk next = new Risk(this);
+    next.board.initialSelect(selected, next.currentPlayerId);
+    next.currentPlayerId =
+        (next.currentPlayerId + (getNumberOfPlayers() - 1)) % getNumberOfPlayers();
+
+    return next;
   }
 
   @Override
