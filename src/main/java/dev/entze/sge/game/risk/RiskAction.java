@@ -100,4 +100,20 @@ public class RiskAction {
   public int hashCode() {
     return Objects.hash(srcId, targetId, value);
   }
+
+  @Override
+  public String toString() {
+    if (srcId == targetId && srcId == -1) {
+      int attackerCasualties = this.attackerCasualties();
+      int defenderCasualties = this.defenderCasualties();
+      return attackerCasualties + "X" + defenderCasualties;
+    }
+
+    if (srcId == -1) {
+      return "-(" + value + ")->" + targetId;
+    }
+
+    return srcId + "-(" + value + ")->" + targetId;
+
+  }
 }
