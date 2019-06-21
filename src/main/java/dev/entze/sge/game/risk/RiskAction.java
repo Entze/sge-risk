@@ -38,12 +38,12 @@ public class RiskAction {
     return new RiskAction(attackingId, defendingId, troops);
   }
 
-  public static RiskAction bolster(int bolsteringId, int bolsteredId, int troops) {
-    return new RiskAction(bolsteringId, bolsteredId, troops);
+  public static RiskAction fortify(int fortifyingId, int fortifiedId, int troops) {
+    return new RiskAction(fortifyingId, fortifiedId, troops);
   }
 
   public static RiskAction casualties(int attacker, int defender) {
-    return new RiskAction(attacker | (defender << 3));
+    return new RiskAction(attacker | (defender << (Integer.SIZE / 2)));
   }
 
   public int selected() {
@@ -66,20 +66,20 @@ public class RiskAction {
     return value;
   }
 
-  public int bolsteringId() {
+  public int fortifyingId() {
     return srcId;
   }
 
-  public int bosteredId() {
+  public int fortifiedId() {
     return targetId;
   }
 
   public int attackerCasualties() {
-    return value & 0b111;
+    return value & (~0 >>> (Integer.SIZE / 2));
   }
 
   public int defenderCasualties() {
-    return (value >>> 3) & 0b111;
+    return (value >>> (Integer.SIZE / 2)) & (~0 >>> (Integer.SIZE / 2));
   }
 
   @Override
