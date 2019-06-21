@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jgrapht.Graph;
@@ -48,6 +49,11 @@ public class RiskBoard {
   private final Map<Integer, RiskContinent> continents;
 
   private final int[] nonDeployedReinforcements;
+  //private final Map<Integer, Integer> involvedTroopsInAttacks;
+  private int attackingId;
+  private int defendingId;
+  private int troops;
+  private RiskPhase phase;
 
   private final String map;
 
@@ -124,7 +130,9 @@ public class RiskBoard {
             RiskContinentConfiguration::getContinent, (a, b) -> b));
 
     nonDeployedReinforcements = new int[numberOfPlayers];
-    Arrays.fill(nonDeployedReinforcements, configuration.getInitialTroops()[numberOfPlayers - 2]);
+    int[] initialTroops = configuration.getInitialTroops();
+    Arrays.fill(nonDeployedReinforcements,
+        initialTroops[Math.max(0, Math.min(numberOfPlayers - 2, initialTroops.length - 1))]);
     if (!configuration.isChooseInitialTerritories()) {
       List<Integer> ids = new ArrayList<>(territories.keySet());
       Collections.shuffle(ids);
@@ -134,7 +142,14 @@ public class RiskBoard {
         territory.setTroops(1);
         nonDeployedReinforcements[p % numberOfPlayers]--;
       }
+      endMove(0);
     }
+
+    attackingId = -1;
+    defendingId = -1;
+    troops = 0;
+
+    phase = RiskPhase.REINFORCEMENT;
 
     map = configuration.getMap();
   }
@@ -147,7 +162,8 @@ public class RiskBoard {
         riskBoard.fortifyOnlyWithNonFightingArmies, riskBoard.withMissions,
         riskBoard.gameBoard, riskBoard.territories, riskBoard.deckOfCards, riskBoard.playerMissions,
         riskBoard.playerCards,
-        riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.map);
+        riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.attackingId,
+        riskBoard.defendingId, riskBoard.troops, riskBoard.phase, riskBoard.map);
   }
 
   public RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice, boolean withCards,
@@ -157,7 +173,9 @@ public class RiskBoard {
       boolean withMissions,
       Graph<Integer, DefaultEdge> gameBoard, Map<Integer, RiskTerritory> territories,
       Collection<RiskCard> deckOfCards, RiskMission[] playerMissions, RiskCard[][] playerCards,
-      Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements, String map) {
+      Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements, int attackingId,
+      int defendingId, int troops, RiskPhase phase,
+      String map) {
     this.numberOfPlayers = numberOfPlayers;
     this.maxAttackerDice = maxAttackerDice;
     this.maxDefenderDice = maxDefenderDice;
@@ -176,6 +194,10 @@ public class RiskBoard {
     this.playerCards = playerCards != null ? playerCards.clone() : null;
     this.continents = continents;
     this.nonDeployedReinforcements = nonDeployedReinforcements.clone();
+    this.attackingId = attackingId;
+    this.defendingId = defendingId;
+    this.troops = troops;
+    this.phase = phase;
     this.map = map;
   }
 
@@ -200,7 +222,6 @@ public class RiskBoard {
     return territories.containsKey(territoryId) ? territories.get(territoryId).getTroops() : 0;
   }
 
-
   public String getMap() {
     return map;
   }
@@ -217,4 +238,80 @@ public class RiskBoard {
     territory.setTroops(1);
     nonDeployedReinforcements[playerId]--;
   }
+
+  public void endMove(int nextPlayer) {
+    phase = RiskPhase.REINFORCEMENT;
+    awardReinforcements(nextPlayer);
+  }
+
+  private void awardReinforcements(int player) {
+    int occupiedTerritories = Math.toIntExact(territories.values().stream()
+        .filter(t -> t.getOccupantPlayerId() == player).count());
+    int reinforcements = Math
+        .max(reinforcementAtLeast, occupiedTerritories / reinforcementThreshold);
+
+    for (Entry<Integer, RiskContinent> continent : continents.entrySet()) {
+      if (territories.values().stream().filter(t -> t.getContinentId() == continent.getKey())
+          .allMatch(t -> t.getOccupantPlayerId() == player)) {
+        reinforcements += continent.getValue().getTroopBonus();
+      }
+    }
+
+    nonDeployedReinforcements[player] += reinforcements;
+  }
+
+  public int reinforcementsLeft(int player) {
+    return nonDeployedReinforcements[player];
+  }
+
+  public boolean isReinforcementPhase() {
+    return phase == RiskPhase.REINFORCEMENT;
+  }
+
+  public boolean isAttackPhase() {
+    return phase == RiskPhase.ATTACK;
+  }
+
+  public boolean isOccupyPhase() {
+    return phase == RiskPhase.OCCUPY;
+  }
+
+  public boolean isBolsterPhase() {
+    return phase == RiskPhase.FORTIFY;
+  }
+
+  public int getMaxAttackerDice() {
+    return maxAttackerDice;
+  }
+
+  public int getMaxDefenderDice() {
+    return maxDefenderDice;
+  }
+
+  public int getNrOfDefenderDice() {
+
+    if (!territories.containsKey(defendingId)) {
+      return 0;
+    }
+
+    return Math.min(maxDefenderDice, territories.get(defendingId).getTroops());
+  }
+
+  public int getNrOfAttackerDice() {
+
+    if (!territories.containsKey(attackingId)) {
+      return 0;
+    }
+
+    return Math.min(maxAttackerDice, troops);
+  }
+
+
+  private enum RiskPhase {
+    REINFORCEMENT,
+    ATTACK,
+    OCCUPY,
+    FORTIFY,
+  }
+
 }

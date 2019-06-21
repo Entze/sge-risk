@@ -1,6 +1,7 @@
 package dev.entze.sge.game.risk;
 
 import dev.entze.sge.game.ActionRecord;
+import dev.entze.sge.game.Dice;
 import dev.entze.sge.game.Game;
 import dev.entze.sge.game.risk.board.RiskBoard;
 import dev.entze.sge.game.risk.board.RiskTerritory;
@@ -8,6 +9,7 @@ import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,6 +23,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   private List<ActionRecord<RiskAction>> actionRecords;
   private RiskBoard board;
 
+  private final Dice attackerDice;
+  private final Dice defenderDice;
+
 
   public Risk(String yaml, int numberOfPlayers) {
     this((RiskConfiguration) RiskConfiguration.getYaml().load(yaml), numberOfPlayers);
@@ -28,6 +33,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   public Risk(RiskConfiguration configuration, int numberOfPlayers) {
     this(0, true, Collections.emptyList(), new RiskBoard(configuration, numberOfPlayers));
+    if (numberOfPlayers > configuration.getMaxNumberOfPlayers()) {
+      throw new IllegalArgumentException("Wrong number of players");
+    }
   }
 
   public Risk(Risk risk) {
@@ -40,10 +48,22 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     this.canonical = canonical;
     this.actionRecords = new ArrayList<>(actionRecords);
     this.board = new RiskBoard(board);
+    if (!(getMinimumNumberOfPlayers() <= getNumberOfPlayers()
+        && getNumberOfPlayers() <= getMaximumNumberOfPlayers())) {
+      throw new IllegalArgumentException("Wrong number of players");
+    }
+
+    this.attackerDice = new Dice(board.getMaxAttackerDice());
+    this.defenderDice = new Dice(board.getMaxDefenderDice());
   }
 
   @Override
   public boolean isGameOver() {
+    if (!isInitialSelect() && board.getTerritories().values().stream().mapToInt(
+        RiskTerritory::getOccupantPlayerId).distinct().count()
+        == 1L) { // all territories belong to one player
+      return true;
+    }
     return false;
   }
 
@@ -76,18 +96,33 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   public Set<RiskAction> getPossibleActions() {
     if (isInitialSelect()) {
       return initialSelectGPA();
+    } else if (currentPlayerId < 0) {
+
+    } else if (board.isReinforcementPhase()) {
+      Set<RiskAction> actions = new HashSet<>();
+      int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
+
+      for (int r = 1; r <= reinforcementsLeft; r++) {
+        int finalR = r;
+        actions.addAll(board.getTerritories().entrySet().stream()
+            .filter(t -> t.getValue().getOccupantPlayerId() == currentPlayerId)
+            .map(t -> RiskAction.reinforce(t.getKey(), finalR)).collect(Collectors.toSet()));
+      }
+
+      return actions;
     }
-    return null;
+
+    return Collections.emptySet();
   }
 
-  private boolean initialSelect = true;
+  private boolean initialSelectMaybe = true;
 
   private boolean isInitialSelect() {
-    if (initialSelect && (board.getTerritories().values().stream().anyMatch(
+    if (initialSelectMaybe && (board.getTerritories().values().stream().anyMatch(
         t -> !(0 <= t.getOccupantPlayerId() && t.getOccupantPlayerId() < getNumberOfPlayers())))) {
       return true;
     }
-    initialSelect = false;
+    initialSelectMaybe = false;
     return false;
   }
 
@@ -116,10 +151,22 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public Game<RiskAction, RiskBoard> doAction(RiskAction riskAction) {
+    Risk next = null;
     if (isInitialSelect()) {
-      return initialSelectDA(riskAction);
+      next = initialSelectDA(riskAction);
+    } else if (currentPlayerId < 0) {
+
+    } else if (board.isReinforcementPhase()) {
+
+    } else if (board.isAttackPhase()) {
+
+    } else if (board.isOccupyPhase()) {
+
+    } else if (board.isBolsterPhase()) {
+
     }
-    return null;
+
+    return next;
   }
 
   private Risk initialSelectDA(RiskAction riskAction) {
@@ -141,27 +188,57 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     next.currentPlayerId =
         (next.currentPlayerId + (getNumberOfPlayers() - 1)) % getNumberOfPlayers();
 
+    if (!next.isInitialSelect()) {
+      next.currentPlayerId = 1;
+      next.board.endMove(next.currentPlayerId);
+    }
+
     return next;
   }
 
   @Override
   public RiskAction determineNextAction() {
-    return null;
+    if (currentPlayerId >= 0) {
+      return null;
+    }
+
+    int attacker = board.getNrOfAttackerDice();
+    int defender = board.getNrOfDefenderDice();
+
+    int compareDice = Math.min(attacker, defender);
+    attackerDice.rollN(attacker);
+    defenderDice.rollN(defender);
+
+    attackerDice.sortReverse();
+    defenderDice.sortReverse();
+
+    attacker = 0;
+    defender = 0;
+
+    for (int die = 0; die < compareDice; die++) {
+      if (attackerDice.getFaceOf(die) > defenderDice.getFaceOf(die)) {
+        defender++;
+      } else {
+        attacker++;
+      }
+    }
+
+    return RiskAction.casualties(attacker, defender);
   }
 
   @Override
   public List<ActionRecord<RiskAction>> getActionRecords() {
-    return null;
+    return this.actionRecords;
   }
 
   @Override
   public boolean isCanonical() {
-    return false;
+    return this.canonical;
   }
 
   @Override
-  public Game<RiskAction, RiskBoard> getGame(int i) {
-    return null;
+  public Game<RiskAction, RiskBoard> getGame(int p) {
+    return stripOutUnknownInformation(new Risk(currentPlayerId, false, actionRecords, board), p);
   }
 
   @Override
@@ -272,6 +349,16 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     return ret;
+  }
+
+
+  private static Risk stripOutUnknownInformation(Risk game) {
+    return game;
+  }
+
+  private static Risk stripOutUnknownInformation(Risk game, int player) {
+    Risk next = stripOutUnknownInformation(game);
+    return next;
   }
 
 }

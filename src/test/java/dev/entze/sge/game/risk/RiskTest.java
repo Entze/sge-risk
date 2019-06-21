@@ -2,6 +2,7 @@ package dev.entze.sge.game.risk;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import dev.entze.sge.game.risk.board.RiskBoard;
@@ -10,7 +11,9 @@ import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -123,12 +126,124 @@ public class RiskTest {
   }
 
   @Test
-  public void test_game_doAction() {
+  public void test_game_creation_3() {
+    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 3);
+    RiskBoard board = risk.getBoard();
+    assertEquals(3, risk.getNumberOfPlayers());
+    assertEquals(3, board.getNumberOfPlayers());
+    System.out.println(risk.toTextRepresentation());
+  }
+
+  @Test
+  public void test_game_creation_4() {
+    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 4);
+    RiskBoard board = risk.getBoard();
+    assertEquals(4, risk.getNumberOfPlayers());
+    assertEquals(4, board.getNumberOfPlayers());
+    System.out.println(risk.toTextRepresentation());
+  }
+
+  @Test
+  public void test_game_creation_5() {
+    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 5);
+    RiskBoard board = risk.getBoard();
+    assertEquals(5, risk.getNumberOfPlayers());
+    assertEquals(5, board.getNumberOfPlayers());
+    System.out.println(risk.toTextRepresentation());
+  }
+
+  @Test
+  public void test_game_creation_6() {
+    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 6);
+    RiskBoard board = risk.getBoard();
+    assertEquals(6, risk.getNumberOfPlayers());
+    assertEquals(6, board.getNumberOfPlayers());
+    System.out.println(risk.toTextRepresentation());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_creation_err_1() {
+    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 1);
+    fail();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_creation_err_2() {
+    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 7);
+    fail();
+  }
+
+  @Test
+  public void test_game_doAction_reinforce_1() {
+    Risk risk = new Risk(simpleConfigYaml, 2);
+    assertEquals(0, risk.getCurrentPlayer());
+
+    assertEquals(8, risk.getPossibleActions().size());
+  }
+
+  @Test
+  public void test_game_doAction_reinforce_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertEquals(5, risk.getPossibleActions().size());
+    assertEquals(IntStream.range(1, 6).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
+        Collectors.toSet()), risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(4, risk.getPossibleActions().size());
+    assertEquals(IntStream.range(1, 5).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
+        Collectors.toSet()), risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 2));
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(2, risk.getPossibleActions().size());
+    assertEquals(IntStream.range(1, 3).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
+        Collectors.toSet()), risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 2));
+    assertEquals(1, risk.getCurrentPlayer());
 
   }
 
   @Test
-  public void test_game_doAction_initialSelect() {
+  public void test_game_doAction_attack_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 5));
+
+    assertEquals(Stream.concat(
+        IntStream.range(1, 6).mapToObj(t -> RiskAction.attack(1, 0, t)),
+        IntStream.range(1, 6).mapToObj(t -> RiskAction.attack(1, 2, t))
+        ).collect(Collectors.toSet()), risk.getPossibleActions()
+    );
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+    assertTrue(0 > risk.getCurrentPlayer());
+
+
+  }
+
+
+  @Test
+  public void test_game_doAction_initialSelect_1() {
 
     RiskConfiguration riskConfiguration = RiskConfiguration.getYaml().load(simpleConfigYaml);
     riskConfiguration.setChooseInitialTerritories(true);
@@ -178,6 +293,25 @@ public class RiskTest {
 
   }
 
+  @Test
+  public void test_game_doAction_initialSelect_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setMaxNumberOfPlayers(3);
+    config.setInitialTroops(1);
+    config.setChooseInitialTerritories(true);
+
+    Risk risk = new Risk(config, 3);
+
+    assertEquals(0, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    assertEquals(2, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    assertEquals(1, risk.getCurrentPlayer());
+
+  }
+
   @Test(expected = IllegalArgumentException.class)
   public void test_game_doAction_initialSelect_err_selecting_already_selected() {
 
@@ -203,5 +337,23 @@ public class RiskTest {
 
   }
 
+  @Test
+  public void test_game_getGame_independent() {
+    Risk risk = new Risk(simpleConfigYaml, 2);
+
+    Risk other = (Risk) risk.getGame();
+
+    RiskBoard board = risk.getBoard();
+    RiskBoard otherBoard = other.getBoard();
+
+    otherBoard.getTerritories().values().forEach(t -> {
+      t.setOccupantPlayerId(0);
+      t.setTroops(1000);
+    });
+
+    assertFalse(board.getTerritories().values().stream()
+        .anyMatch(t -> t.getOccupantPlayerId() == 0 && t.getTroops() == 1000));
+
+  }
 
 }
