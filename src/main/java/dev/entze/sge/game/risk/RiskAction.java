@@ -4,6 +4,8 @@ import java.util.Objects;
 
 public class RiskAction {
 
+  private static final RiskAction END_PHASE = new RiskAction(-2, -4, -8);
+
   private final int srcId;
   private final int targetId;
   private final int value;
@@ -40,6 +42,10 @@ public class RiskAction {
 
   public static RiskAction fortify(int fortifyingId, int fortifiedId, int troops) {
     return new RiskAction(fortifyingId, fortifiedId, troops);
+  }
+
+  public static RiskAction endPhase() {
+    return END_PHASE;
   }
 
   public static RiskAction casualties(int attacker, int defender) {
@@ -82,6 +88,10 @@ public class RiskAction {
     return (value >>> (Integer.SIZE / 2)) & (~0 >>> (Integer.SIZE / 2));
   }
 
+  public boolean isEndPhase() {
+    return srcId == END_PHASE.srcId && targetId == END_PHASE.targetId && value == END_PHASE.value;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -103,6 +113,10 @@ public class RiskAction {
 
   @Override
   public String toString() {
+    if (isEndPhase()) {
+      return "end phase";
+    }
+
     if (srcId == targetId && srcId == -1) {
       return String.format("%dX%d", this.attackerCasualties(), this.defenderCasualties());
     }

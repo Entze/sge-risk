@@ -213,6 +213,10 @@ public class RiskBoard {
     return territories.keySet();
   }
 
+  public boolean isTerritory(int territoryId) {
+    return territories.containsKey(territoryId);
+  }
+
   public int getTerritoryOccupantId(int territoryId) {
     return territories.containsKey(territoryId) ? territories.get(territoryId).getOccupantPlayerId()
         : -1;
@@ -264,6 +268,7 @@ public class RiskBoard {
     return nonDeployedReinforcements[player];
   }
 
+
   public boolean isReinforcementPhase() {
     return phase == RiskPhase.REINFORCEMENT;
   }
@@ -304,6 +309,14 @@ public class RiskBoard {
     }
 
     return Math.min(maxAttackerDice, troops);
+  }
+
+  public void reinforce(int player, int reinforcedId, int troops) {
+    if (territories.containsKey(reinforcedId)) {
+      RiskTerritory territory = territories.get(reinforcedId);
+      territory.setTroops(territory.getTroops() + troops);
+      nonDeployedReinforcements[player] -= troops;
+    }
   }
 
 

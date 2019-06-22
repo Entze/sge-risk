@@ -217,6 +217,54 @@ public class RiskTest {
 
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_doAction_reinforce_err_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertFalse(risk.isValidAction(RiskAction.reinforce(0, 3)));
+    risk.doAction(RiskAction.reinforce(0, 3));
+    fail();
+
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_doAction_reinforce_err_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertFalse(risk.isValidAction(RiskAction.reinforce(1, 0)));
+    risk.doAction(RiskAction.reinforce(1, 0));
+    fail();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_doAction_reinforce_err_3() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertFalse(risk.isValidAction(RiskAction.reinforce(1, 999)));
+    risk.doAction(RiskAction.reinforce(1, 999));
+    fail();
+
+  }
+
+
   @Test
   public void test_game_doAction_attack_1() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
