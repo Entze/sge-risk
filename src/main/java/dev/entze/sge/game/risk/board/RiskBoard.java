@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
@@ -317,6 +318,23 @@ public class RiskBoard {
       territory.setTroops(territory.getTroops() + troops);
       nonDeployedReinforcements[player] -= troops;
     }
+  }
+
+  public void endReinforcementPhase() {
+    phase = RiskPhase.ATTACK;
+  }
+
+  public Set<Integer> neighboringTerritories(int territoryId) {
+    return Graphs.neighborSetOf(gameBoard, territoryId);
+  }
+
+  public int getMaxAttackingTroops(int attackingId) {
+    int troops = getTerritoryTroops(attackingId);
+    if (occupyOnlyWithAttackingArmies) {
+      return troops;
+    }
+
+    return Math.min(troops, getMaxAttackerDice());
   }
 
 

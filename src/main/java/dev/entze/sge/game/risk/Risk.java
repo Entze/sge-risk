@@ -99,17 +99,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     } else if (currentPlayerId < 0) {
 
     } else if (board.isReinforcementPhase()) {
-      Set<RiskAction> actions = new HashSet<>();
-      int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
-
-      for (int r = 1; r <= reinforcementsLeft; r++) {
-        int finalR = r;
-        actions.addAll(board.getTerritories().entrySet().stream()
-            .filter(t -> t.getValue().getOccupantPlayerId() == currentPlayerId)
-            .map(t -> RiskAction.reinforce(t.getKey(), finalR)).collect(Collectors.toSet()));
-      }
-
-      return actions;
+      return reinforceGPA();
+    } else if (board.isAttackPhase()) {
+      return attackGPA();
     }
 
     return Collections.emptySet();
@@ -131,6 +123,43 @@ public class Risk implements Game<RiskAction, RiskBoard> {
         t -> !(0 <= t.getValue().getOccupantPlayerId()
             && t.getValue().getOccupantPlayerId() < getNumberOfPlayers())).mapToInt(Entry::getKey)
         .mapToObj(RiskAction::select).collect(Collectors.toSet());
+  }
+
+  private Set<RiskAction> reinforceGPA() {
+    Set<RiskAction> actions = new HashSet<>();
+    int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
+
+    for (int r = 1; r <= reinforcementsLeft; r++) {
+      int finalR = r;
+      actions.addAll(board.getTerritories().entrySet().stream()
+          .filter(t -> t.getValue().getOccupantPlayerId() == currentPlayerId)
+          .map(t -> RiskAction.reinforce(t.getKey(), finalR)).collect(Collectors.toSet()));
+    }
+    return actions;
+  }
+
+  private Set<RiskAction> attackGPA() {
+    Set<RiskAction> actions = new HashSet<>();
+    actions.add(RiskAction.endPhase());
+
+    Set<Entry<Integer, RiskTerritory>> territories = board.getTerritories().entrySet().stream()
+        .filter(e -> e.getValue().getOccupantPlayerId() == currentPlayerId
+            && e.getValue().getTroops() > 1).collect(
+            Collectors.toSet());
+    for (Entry<Integer, RiskTerritory> territory : territories) {
+      Set<Integer> neighbors = board.neighboringTerritories(territory.getKey()).stream()
+          .filter(n -> board.getTerritoryOccupantId(n) != currentPlayerId).collect(
+              Collectors.toSet());
+      int maxAttack = board.getMaxAttackingTroops(territory.getKey());
+      for (int t = 1; t <= maxAttack; t++) {
+        final int finalT = t;
+        actions.addAll(
+            neighbors.stream().map(n -> RiskAction.attack(territory.getKey(), n, finalT))
+                .collect(Collectors.toSet()));
+      }
+    }
+
+    return actions;
   }
 
   @Override
@@ -244,6 +273,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Risk next = new Risk(this);
 
     next.board.reinforce(next.currentPlayerId, reinforcedId, troops);
+    if (next.board.reinforcementsLeft(currentPlayerId) == 0) {
+      next.board.endReinforcementPhase();
+    }
 
     return next;
 
@@ -291,6 +323,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public Game<RiskAction, RiskBoard> getGame(int p) {
+    if (!canonical) {
+      return new Risk(this);
+    }
     return stripOutUnknownInformation(new Risk(currentPlayerId, false, actionRecords, board), p);
   }
 

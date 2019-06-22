@@ -276,11 +276,14 @@ public class RiskTest {
     risk = (Risk) risk.doAction(RiskAction.select(2));
     risk = (Risk) risk.doAction(RiskAction.reinforce(1, 5));
 
-    assertEquals(Stream.concat(
-        IntStream.range(1, 6).mapToObj(t -> RiskAction.attack(1, 0, t)),
-        IntStream.range(1, 6).mapToObj(t -> RiskAction.attack(1, 2, t))
-        ).collect(Collectors.toSet()), risk.getPossibleActions()
-    );
+    Set<RiskAction> expected = Stream.concat(
+        IntStream.range(1, 4).mapToObj(t -> RiskAction.attack(1, 0, t)),
+        IntStream.range(1, 4).mapToObj(t -> RiskAction.attack(1, 2, t))
+    ).collect(Collectors.toSet());
+
+    expected.add(RiskAction.endPhase());
+
+    assertEquals(expected, risk.getPossibleActions());
 
     assertEquals(1, risk.getCurrentPlayer());
     risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
