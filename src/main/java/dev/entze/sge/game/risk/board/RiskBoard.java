@@ -269,7 +269,6 @@ public class RiskBoard {
     return nonDeployedReinforcements[player];
   }
 
-
   public boolean isReinforcementPhase() {
     return phase == RiskPhase.REINFORCEMENT;
   }
@@ -282,7 +281,7 @@ public class RiskBoard {
     return phase == RiskPhase.OCCUPY;
   }
 
-  public boolean isBolsterPhase() {
+  public boolean isFortifyPhase() {
     return phase == RiskPhase.FORTIFY;
   }
 
@@ -328,6 +327,12 @@ public class RiskBoard {
     return Graphs.neighborSetOf(gameBoard, territoryId);
   }
 
+  public Set<Integer> neighboringEnemyTerritories(int territoryId) {
+    final int self = getTerritoryOccupantId(territoryId);
+    return Graphs.neighborSetOf(gameBoard, territoryId).stream()
+        .filter(id -> getTerritoryOccupantId(id) != self).collect(Collectors.toSet());
+  }
+
   public int getMaxAttackingTroops(int attackingId) {
     int troops = getTerritoryTroops(attackingId);
     if (occupyOnlyWithAttackingArmies) {
@@ -337,6 +342,32 @@ public class RiskBoard {
     return Math.min(troops, getMaxAttackerDice());
   }
 
+  public boolean areNeighbors(int territoryId1, int territoryId2) {
+    return gameBoard.containsEdge(territoryId1, territoryId2);
+  }
+
+  public Set<Integer> occupiedTerritoriesByPlayer(final int playerId) {
+    return territories.entrySet().stream()
+        .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId).map(Entry::getKey)
+        .collect(Collectors.toSet());
+  }
+
+  public Set<Integer> occupiedTerritoriesByPlayerWithMoreThan1Troops(final int playerId) {
+    return territories.entrySet().stream()
+        .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId
+            && entry.getValue().getTroops() > 1).map(Entry::getKey)
+        .collect(Collectors.toSet());
+  }
+
+  public void startAttack(int attackingId, int defendingId, int troops) {
+    this.attackingId = attackingId;
+    this.defendingId = defendingId;
+    this.troops = troops;
+  }
+
+  public boolean isAttack() {
+    return attackingId >= 0 && defendingId >= 0 && troops > 0;
+  }
 
   private enum RiskPhase {
     REINFORCEMENT,

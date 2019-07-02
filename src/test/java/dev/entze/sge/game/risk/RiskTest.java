@@ -174,125 +174,11 @@ public class RiskTest {
   }
 
   @Test
-  public void test_game_doAction_reinforce_1() {
+  public void test_game_doAction_initialReinforce_1(){
     Risk risk = new Risk(simpleConfigYaml, 2);
-    assertEquals(0, risk.getCurrentPlayer());
-
-    assertEquals(8, risk.getPossibleActions().size());
-  }
-
-  @Test
-  public void test_game_doAction_reinforce_2() {
-    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
-    config.setChooseInitialTerritories(true);
-    Risk risk = new Risk(config, 2);
-
-    risk = (Risk) risk.doAction(RiskAction.select(0));
-    risk = (Risk) risk.doAction(RiskAction.select(1));
-    risk = (Risk) risk.doAction(RiskAction.select(2));
-
-    assertEquals(5, risk.getPossibleActions().size());
-    assertEquals(IntStream.range(1, 6).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
-        Collectors.toSet()), risk.getPossibleActions());
-
-    assertEquals(1, risk.getCurrentPlayer());
-    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
-    assertEquals(1, risk.getCurrentPlayer());
-
-    assertEquals(4, risk.getPossibleActions().size());
-    assertEquals(IntStream.range(1, 5).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
-        Collectors.toSet()), risk.getPossibleActions());
-
-    assertEquals(1, risk.getCurrentPlayer());
-    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 2));
-    assertEquals(1, risk.getCurrentPlayer());
-
-    assertEquals(2, risk.getPossibleActions().size());
-    assertEquals(IntStream.range(1, 3).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
-        Collectors.toSet()), risk.getPossibleActions());
-
-    assertEquals(1, risk.getCurrentPlayer());
-    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 2));
     assertEquals(1, risk.getCurrentPlayer());
 
   }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void test_game_doAction_reinforce_err_1() {
-    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
-    config.setChooseInitialTerritories(true);
-    Risk risk = new Risk(config, 2);
-
-    risk = (Risk) risk.doAction(RiskAction.select(0));
-    risk = (Risk) risk.doAction(RiskAction.select(1));
-    risk = (Risk) risk.doAction(RiskAction.select(2));
-
-    assertFalse(risk.isValidAction(RiskAction.reinforce(0, 3)));
-    risk.doAction(RiskAction.reinforce(0, 3));
-    fail();
-
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void test_game_doAction_reinforce_err_2() {
-    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
-    config.setChooseInitialTerritories(true);
-    Risk risk = new Risk(config, 2);
-
-    risk = (Risk) risk.doAction(RiskAction.select(0));
-    risk = (Risk) risk.doAction(RiskAction.select(1));
-    risk = (Risk) risk.doAction(RiskAction.select(2));
-
-    assertFalse(risk.isValidAction(RiskAction.reinforce(1, 0)));
-    risk.doAction(RiskAction.reinforce(1, 0));
-    fail();
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void test_game_doAction_reinforce_err_3() {
-    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
-    config.setChooseInitialTerritories(true);
-    Risk risk = new Risk(config, 2);
-
-    risk = (Risk) risk.doAction(RiskAction.select(0));
-    risk = (Risk) risk.doAction(RiskAction.select(1));
-    risk = (Risk) risk.doAction(RiskAction.select(2));
-
-    assertFalse(risk.isValidAction(RiskAction.reinforce(1, 999)));
-    risk.doAction(RiskAction.reinforce(1, 999));
-    fail();
-
-  }
-
-
-  @Test
-  public void test_game_doAction_attack_1() {
-    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
-    config.setChooseInitialTerritories(true);
-    Risk risk = new Risk(config, 2);
-
-    risk = (Risk) risk.doAction(RiskAction.select(0));
-    risk = (Risk) risk.doAction(RiskAction.select(1));
-    risk = (Risk) risk.doAction(RiskAction.select(2));
-    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 5));
-
-    Set<RiskAction> expected = Stream.concat(
-        IntStream.range(1, 4).mapToObj(t -> RiskAction.attack(1, 0, t)),
-        IntStream.range(1, 4).mapToObj(t -> RiskAction.attack(1, 2, t))
-    ).collect(Collectors.toSet());
-
-    expected.add(RiskAction.endPhase());
-
-    assertEquals(expected, risk.getPossibleActions());
-
-    assertEquals(1, risk.getCurrentPlayer());
-    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
-    assertTrue(0 > risk.getCurrentPlayer());
-
-
-  }
-  //TODO: Test occupy only with attacking armies
-
 
   @Test
   public void test_game_doAction_initialSelect_1() {
@@ -388,6 +274,146 @@ public class RiskTest {
     fail();
 
   }
+
+  @Test
+  public void test_game_doAction_reinforce_1() {
+    Risk risk = new Risk(simpleConfigYaml, 2);
+    assertEquals(0, risk.getCurrentPlayer());
+
+    assertEquals(8, risk.getPossibleActions().size());
+  }
+
+  @Test
+  public void test_game_doAction_reinforce_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertEquals(5, risk.getPossibleActions().size());
+    assertEquals(IntStream.range(1, 6).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
+        Collectors.toSet()), risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(4, risk.getPossibleActions().size());
+    assertEquals(IntStream.range(1, 5).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
+        Collectors.toSet()), risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 2));
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(2, risk.getPossibleActions().size());
+    assertEquals(IntStream.range(1, 3).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
+        Collectors.toSet()), risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 2));
+    assertEquals(1, risk.getCurrentPlayer());
+
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_doAction_reinforce_err_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertFalse(risk.isValidAction(RiskAction.reinforce(0, 3)));
+    risk.doAction(RiskAction.reinforce(0, 3));
+    fail();
+
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_doAction_reinforce_err_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertFalse(risk.isValidAction(RiskAction.reinforce(1, 0)));
+    risk.doAction(RiskAction.reinforce(1, 0));
+    fail();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_game_doAction_reinforce_err_3() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+
+    assertFalse(risk.isValidAction(RiskAction.reinforce(1, 999)));
+    risk.doAction(RiskAction.reinforce(1, 999));
+    fail();
+
+  }
+
+  @Test
+  public void test_game_doAction_attack_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 5));
+
+    Set<RiskAction> expected = Stream.concat(
+        IntStream.range(1, 4).mapToObj(t -> RiskAction.attack(1, 0, t)),
+        IntStream.range(1, 4).mapToObj(t -> RiskAction.attack(1, 2, t))
+    ).collect(Collectors.toSet());
+
+    expected.add(RiskAction.endPhase());
+
+    assertEquals(expected, risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+    assertTrue(0 > risk.getCurrentPlayer());
+
+
+  }
+
+  @Test
+  public void test_game_doAction_diceThrow_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 5));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+
+    assertEquals(Set.of(RiskAction.casualties(0, 2),
+        RiskAction.casualties(1, 1),
+        RiskAction.casualties(2, 0)), risk.getPossibleActions());
+
+    //risk = (Risk) risk.doAction(RiskAction.casualties())
+
+  }
+
+  //TODO: Test occupy only with attacking armies
 
   @Test
   public void test_game_getGame_independent() {

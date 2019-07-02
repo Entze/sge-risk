@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Risk implements Game<RiskAction, RiskBoard> {
 
@@ -94,10 +95,12 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public Set<RiskAction> getPossibleActions() {
-    if (isInitialSelect()) {
+    if (currentPlayerId < 0) {
+      if (board.isAttack()) {
+        return casualtiesGPA();
+      }
+    } else if (isInitialSelect()) {
       return initialSelectGPA();
-    } else if (currentPlayerId < 0) {
-
     } else if (board.isReinforcementPhase()) {
       return reinforceGPA();
     } else if (board.isAttackPhase()) {
@@ -142,24 +145,31 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Set<RiskAction> actions = new HashSet<>();
     actions.add(RiskAction.endPhase());
 
-    Set<Entry<Integer, RiskTerritory>> territories = board.getTerritories().entrySet().stream()
-        .filter(e -> e.getValue().getOccupantPlayerId() == currentPlayerId
-            && e.getValue().getTroops() > 1).collect(
-            Collectors.toSet());
-    for (Entry<Integer, RiskTerritory> territory : territories) {
-      Set<Integer> neighbors = board.neighboringTerritories(territory.getKey()).stream()
-          .filter(n -> board.getTerritoryOccupantId(n) != currentPlayerId).collect(
-              Collectors.toSet());
-      int maxAttack = board.getMaxAttackingTroops(territory.getKey());
+    Set<Integer> territories = board
+        .occupiedTerritoriesByPlayerWithMoreThan1Troops(this.currentPlayerId);
+    for (Integer territory : territories) {
+      Set<Integer> neighbors = board.neighboringEnemyTerritories(territory);
+      int maxAttack = board.getMaxAttackingTroops(territory);
       for (int t = 1; t <= maxAttack; t++) {
         final int finalT = t;
         actions.addAll(
-            neighbors.stream().map(n -> RiskAction.attack(territory.getKey(), n, finalT))
+            neighbors.stream().map(n -> RiskAction.attack(territory, n, finalT))
                 .collect(Collectors.toSet()));
       }
     }
 
     return actions;
+  }
+
+  private Set<RiskAction> casualtiesGPA() {
+    return possibleCasualties(board.getNrOfAttackerDice(), board.getNrOfDefenderDice());
+  }
+
+  private static Set<RiskAction> possibleCasualties(final int attackerDice,
+      final int defenderDice) {
+    final int dice = Math.min(attackerDice, defenderDice);
+    return IntStream.rangeClosed(0, dice)
+        .mapToObj(die -> RiskAction.casualties(die, dice - die)).collect(Collectors.toSet());
   }
 
   @Override
@@ -184,6 +194,17 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       int reinforced = riskAction.reinforced();
       return 1 <= riskAction.troops() && riskAction.troops() <= reinforcementsLeft && board
           .isTerritory(reinforced) && board.getTerritoryOccupantId(reinforced) == currentPlayerId;
+    } else if (board.isAttackPhase()) {
+      int attackingId = riskAction.attackingId();
+      int defendingId = riskAction.defendingId();
+      int troops = riskAction.troops();
+
+      return board.getTerritoryOccupantId(attackingId) == this.currentPlayerId
+          && 0 < troops
+          && troops <= board.getMaxAttackingTroops(attackingId)
+          && troops < board.getTerritoryTroops(attackingId)
+          && board.areNeighbors(attackingId, defendingId);
+
     }
     return false;
   }
@@ -191,20 +212,25 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   @Override
   public Game<RiskAction, RiskBoard> doAction(RiskAction riskAction) {
     Risk next = null;
-    if (isInitialSelect()) {
-      next = initialSelectDA(riskAction);
-    } else if (currentPlayerId < 0) {
+    if (currentPlayerId < 0) {
+      if (board.isAttack()) {
 
+      }
+    } else if (isInitialSelect()) {
+      next = initialSelectDA(riskAction);
     } else if (board.isReinforcementPhase()) {
       next = reinforceDA(riskAction);
     } else if (board.isAttackPhase()) {
-
+      next = attackDA(riskAction);
     } else if (board.isOccupyPhase()) {
 
-    } else if (board.isBolsterPhase()) {
+    } else if (board.isFortifyPhase()) {
 
     }
 
+    if (next != null) {
+      next.actionRecords.add(new ActionRecord<>(this.currentPlayerId, riskAction));
+    }
     return next;
   }
 
@@ -279,6 +305,40 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     return next;
 
+  }
+
+  private Risk attackDA(RiskAction riskAction) {
+    int attackingId = riskAction.attackingId();
+    int defendingId = riskAction.defendingId();
+    int troops = riskAction.troops();
+
+    {
+      String errorMsg = "";
+      if (board.getTerritoryOccupantId(attackingId) != this.currentPlayerId) {
+        errorMsg = "Attacking territory does not belong to currentPlayer";
+      } else if (!(0 < troops
+          && troops <= board.getMaxAttackingTroops(attackingId)
+          && troops < board.getTerritoryTroops(attackingId))) {
+        errorMsg = "Illegal number of troops";
+      }
+      if (!board.areNeighbors(attackingId, defendingId)) {
+        if (!errorMsg.isEmpty()) {
+          errorMsg = errorMsg.concat(", ");
+        }
+        errorMsg = errorMsg
+            .concat("Attacking and defending territory are not neighboring territories");
+      }
+
+      if (!errorMsg.isEmpty()) {
+        throw new IllegalArgumentException(errorMsg.concat(", could therefore not attack"));
+      }
+    }
+
+    Risk next = new Risk(-1, this.canonical, actionRecords, this.board);
+
+    next.board.startAttack(attackingId, defendingId, troops);
+
+    return next;
   }
 
   @Override
