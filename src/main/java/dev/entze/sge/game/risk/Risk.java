@@ -401,7 +401,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       }
     }
 
-    Risk next = new Risk(-1, this.canonical, actionRecords, this.board);
+    Risk next = new Risk(this);
+    next.currentPlayerId = -1;
 
     next.board.startAttack(attackingId, defendingId, troops);
 
@@ -410,7 +411,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public RiskAction determineNextAction() {
-    if (currentPlayerId >= 0) {
+    if (currentPlayerId >= 0 || !board.isAttack()) {
       return null;
     }
 
@@ -453,7 +454,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     if (!canonical) {
       return new Risk(this);
     }
-    return stripOutUnknownInformation(new Risk(currentPlayerId, false, actionRecords, board), p);
+    return stripOutUnknownInformation(new Risk(this), p);
   }
 
   @Override
