@@ -137,13 +137,18 @@ public class RiskBoard {
     if (!configuration.isChooseInitialTerritories()) {
       List<Integer> ids = new ArrayList<>(territories.keySet());
       Collections.shuffle(ids);
-      for (int p = 0; p < ids.size(); p++) {
-        RiskTerritory territory = territories.get(ids.get(p));
-        territory.setOccupantPlayerId(p % numberOfPlayers);
-        territory.setTroops(1);
-        nonDeployedReinforcements[p % numberOfPlayers]--;
+      int p;
+      {
+        int i;
+        for (p = numberOfPlayers - 1, i = 0;
+            i < ids.size();
+            i++, p = (p + (numberOfPlayers - 1)) % numberOfPlayers) {
+          RiskTerritory territory = territories.get(ids.get(i));
+          territory.setOccupantPlayerId(p);
+          territory.setTroops(1);
+          nonDeployedReinforcements[p]--;
+        }
       }
-      endMove(0);
     }
 
     attackingId = -1;
@@ -263,6 +268,15 @@ public class RiskBoard {
     }
 
     nonDeployedReinforcements[player] += reinforcements;
+  }
+
+  public boolean areReinforcementsLeft() {
+    for (int nonDeployedReinforcement : nonDeployedReinforcements) {
+      if (nonDeployedReinforcement > 0) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public int reinforcementsLeft(int player) {

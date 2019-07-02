@@ -56,7 +56,7 @@ public class RiskAction {
     return targetId;
   }
 
-  public int reinforced() {
+  public int reinforcedId() {
     return targetId;
   }
 

@@ -41,6 +41,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   public Risk(Risk risk) {
     this(risk.currentPlayerId, risk.canonical, risk.actionRecords, risk.board);
+    this.initialSelectMaybe = risk.initialSelectMaybe;
+    this.initialReinforceMaybe = risk.initialReinforceMaybe;
   }
 
   public Risk(int currentPlayerId, boolean canonical,
@@ -101,6 +103,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       }
     } else if (isInitialSelect()) {
       return initialSelectGPA();
+    } else if (isInitialReinforce()) {
+      return initialReinforceGPA();
     } else if (board.isReinforcementPhase()) {
       return reinforceGPA();
     } else if (board.isAttackPhase()) {
@@ -121,11 +125,26 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     return false;
   }
 
+  private boolean initialReinforceMaybe = true;
+
+  private boolean isInitialReinforce() {
+    if (initialReinforceMaybe && board.areReinforcementsLeft()) {
+      return true;
+    }
+    initialReinforceMaybe = false;
+    return false;
+  }
+
   private Set<RiskAction> initialSelectGPA() {
     return board.getTerritories().entrySet().stream().filter(
         t -> !(0 <= t.getValue().getOccupantPlayerId()
             && t.getValue().getOccupantPlayerId() < getNumberOfPlayers())).mapToInt(Entry::getKey)
         .mapToObj(RiskAction::select).collect(Collectors.toSet());
+  }
+
+  private Set<RiskAction> initialReinforceGPA() {
+    return board.occupiedTerritoriesByPlayer(this.currentPlayerId).stream()
+        .map(id -> RiskAction.reinforce(id, 1)).collect(Collectors.toSet());
   }
 
   private Set<RiskAction> reinforceGPA() {
@@ -179,19 +198,22 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public boolean isValidAction(RiskAction riskAction) {
-    if (isInitialSelect()) {
-      int selected = riskAction.selected();
-      return board.isTerritory(selected) && !(
-          0 <= board.getTerritoryOccupantId(selected)
-              && board.getTerritoryOccupantId(selected) < getNumberOfPlayers());
-    } else if (currentPlayerId < 0) {
+    if (currentPlayerId < 0) {
       int armiesFought = Math.min(board.getNrOfAttackerDice(), board.getNrOfDefenderDice());
       int attackerCasualties = riskAction.attackerCasualties();
       int defenderCasualties = riskAction.defenderCasualties();
       return attackerCasualties + defenderCasualties == armiesFought;
+    } else if (isInitialSelect()) {
+      int selected = riskAction.selected();
+      return board.isTerritory(selected) && !(
+          0 <= board.getTerritoryOccupantId(selected)
+              && board.getTerritoryOccupantId(selected) < getNumberOfPlayers());
+    } else if (board.areReinforcementsLeft()) {
+      return board.isTerritory(riskAction.reinforcedId()) && riskAction.troops() == 1
+          && board.getTerritoryOccupantId(riskAction.reinforcedId()) == currentPlayerId;
     } else if (board.isReinforcementPhase()) {
       int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
-      int reinforced = riskAction.reinforced();
+      int reinforced = riskAction.reinforcedId();
       return 1 <= riskAction.troops() && riskAction.troops() <= reinforcementsLeft && board
           .isTerritory(reinforced) && board.getTerritoryOccupantId(reinforced) == currentPlayerId;
     } else if (board.isAttackPhase()) {
@@ -218,6 +240,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       }
     } else if (isInitialSelect()) {
       next = initialSelectDA(riskAction);
+    } else if (isInitialReinforce()) {
+      next = initialReinforceDA(riskAction);
     } else if (board.isReinforcementPhase()) {
       next = reinforceDA(riskAction);
     } else if (board.isAttackPhase()) {
@@ -239,13 +263,13 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     if (!board.isTerritory(selected)) {
       throw new IllegalArgumentException(
-          "Specified territoryId is not assigned a territory. Could therefore not select");
+          "Specified territoryId is not assigned a territory, could therefore not select");
     }
 
     if (0 <= board.getTerritoryOccupantId(selected)
         && board.getTerritoryOccupantId(selected) < getNumberOfPlayers()) {
       throw new IllegalArgumentException(
-          "Specified territoryId has already an occupant. Could therefore not select");
+          "Specified territoryId has already an occupant, could therefore not select");
     }
 
     Risk next = new Risk(this);
@@ -254,8 +278,51 @@ public class Risk implements Game<RiskAction, RiskBoard> {
         (next.currentPlayerId + (getNumberOfPlayers() - 1)) % getNumberOfPlayers();
 
     if (!next.isInitialSelect()) {
+      if (next.isInitialReinforce()) {
+        next.currentPlayerId = 0;
+      } else {
+        next.currentPlayerId = 1;
+        next.board.endMove(1);
+      }
+    }
+
+    return next;
+  }
+
+  private Risk initialReinforceDA(RiskAction riskAction) {
+    int reinforcedId = riskAction.reinforcedId();
+    int troops = riskAction.troops();
+    {
+      String errorMsg = "";
+
+      if (!board.isTerritory(reinforcedId)) {
+        errorMsg = "Reinforced territory is not an assigned territoryId";
+      } else if (board.getTerritoryOccupantId(reinforcedId) != currentPlayerId) {
+        errorMsg = "Reinforced territory is not occupied by currentPlayer";
+      }
+
+      if (troops != 1) {
+        if (!errorMsg.isEmpty()) {
+          errorMsg = errorMsg.concat(", ");
+        }
+        errorMsg = errorMsg.concat(troops + " is an illegal number of troops");
+      }
+
+      if (!errorMsg.isEmpty()) {
+        throw new IllegalArgumentException(errorMsg.concat(", could therefore not reinforce"));
+      }
+    }
+    Risk next = new Risk(this);
+    next.board.reinforce(currentPlayerId, reinforcedId, troops);
+
+    if (next.isInitialReinforce()) {
+      do {
+        next.currentPlayerId =
+            (next.currentPlayerId + (getNumberOfPlayers() - 1)) % getNumberOfPlayers();
+      } while (next.board.reinforcementsLeft(next.currentPlayerId) <= 0);
+    } else {
       next.currentPlayerId = 1;
-      next.board.endMove(next.currentPlayerId);
+      next.board.endMove(1);
     }
 
     return next;
@@ -275,7 +342,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private Risk reinforceDA(RiskAction riskAction) {
-    int reinforcedId = riskAction.reinforced();
+    int reinforcedId = riskAction.reinforcedId();
     int troops = riskAction.troops();
     {
       String errorMsg = "";

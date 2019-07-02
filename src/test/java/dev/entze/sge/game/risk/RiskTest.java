@@ -174,10 +174,9 @@ public class RiskTest {
   }
 
   @Test
-  public void test_game_doAction_initialReinforce_1(){
+  public void test_game_doAction_initialReinforce_1() {
     Risk risk = new Risk(simpleConfigYaml, 2);
-    assertEquals(1, risk.getCurrentPlayer());
-
+    assertEquals(0, risk.getCurrentPlayer());
   }
 
   @Test
@@ -220,7 +219,7 @@ public class RiskTest {
 
     assertEquals(0, risk.getCurrentPlayer());
     risk = (Risk) risk.doAction(RiskAction.select(2));
-    assertEquals(1, risk.getCurrentPlayer());
+    assertEquals(0, risk.getCurrentPlayer());
 
     assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
     assertEquals(1, risk.getBoard().getTerritoryTroops(0));
@@ -277,10 +276,19 @@ public class RiskTest {
 
   @Test
   public void test_game_doAction_reinforce_1() {
-    Risk risk = new Risk(simpleConfigYaml, 2);
-    assertEquals(0, risk.getCurrentPlayer());
+    RiskConfiguration riskConfiguration = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    riskConfiguration.setChooseInitialTerritories(true);
+    Risk risk = new Risk(riskConfiguration, 2);
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
 
-    assertEquals(8, risk.getPossibleActions().size());
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(3, risk.getPossibleActions().size());
   }
 
   @Test
@@ -292,21 +300,16 @@ public class RiskTest {
     risk = (Risk) risk.doAction(RiskAction.select(0));
     risk = (Risk) risk.doAction(RiskAction.select(1));
     risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
 
-    assertEquals(5, risk.getPossibleActions().size());
-    assertEquals(IntStream.range(1, 6).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
+    assertEquals(3, risk.getPossibleActions().size());
+    assertEquals(IntStream.range(1, 4).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
         Collectors.toSet()), risk.getPossibleActions());
 
     assertEquals(1, risk.getCurrentPlayer());
     risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
-    assertEquals(1, risk.getCurrentPlayer());
-
-    assertEquals(4, risk.getPossibleActions().size());
-    assertEquals(IntStream.range(1, 5).mapToObj(r -> RiskAction.reinforce(1, r)).collect(
-        Collectors.toSet()), risk.getPossibleActions());
-
-    assertEquals(1, risk.getCurrentPlayer());
-    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 2));
     assertEquals(1, risk.getCurrentPlayer());
 
     assertEquals(2, risk.getPossibleActions().size());
@@ -319,7 +322,7 @@ public class RiskTest {
 
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void test_game_doAction_reinforce_err_1() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setChooseInitialTerritories(true);
@@ -330,12 +333,15 @@ public class RiskTest {
     risk = (Risk) risk.doAction(RiskAction.select(2));
 
     assertFalse(risk.isValidAction(RiskAction.reinforce(0, 3)));
-    risk.doAction(RiskAction.reinforce(0, 3));
-    fail();
+    try {
+      risk.doAction(RiskAction.reinforce(0, 3));
+      fail();
+    } catch (IllegalArgumentException ignored) {
+    }
 
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void test_game_doAction_reinforce_err_2() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setChooseInitialTerritories(true);
@@ -346,11 +352,15 @@ public class RiskTest {
     risk = (Risk) risk.doAction(RiskAction.select(2));
 
     assertFalse(risk.isValidAction(RiskAction.reinforce(1, 0)));
-    risk.doAction(RiskAction.reinforce(1, 0));
-    fail();
+    try {
+      risk.doAction(RiskAction.reinforce(1, 0));
+      fail();
+    } catch (IllegalArgumentException ignored) {
+
+    }
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void test_game_doAction_reinforce_err_3() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setChooseInitialTerritories(true);
@@ -361,8 +371,12 @@ public class RiskTest {
     risk = (Risk) risk.doAction(RiskAction.select(2));
 
     assertFalse(risk.isValidAction(RiskAction.reinforce(1, 999)));
-    risk.doAction(RiskAction.reinforce(1, 999));
-    fail();
+    try {
+      risk.doAction(RiskAction.reinforce(1, 999));
+      fail();
+    } catch (IllegalArgumentException ignored) {
+
+    }
 
   }
 
@@ -375,7 +389,11 @@ public class RiskTest {
     risk = (Risk) risk.doAction(RiskAction.select(0));
     risk = (Risk) risk.doAction(RiskAction.select(1));
     risk = (Risk) risk.doAction(RiskAction.select(2));
-    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 5));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
 
     Set<RiskAction> expected = Stream.concat(
         IntStream.range(1, 4).mapToObj(t -> RiskAction.attack(1, 0, t)),
@@ -402,7 +420,11 @@ public class RiskTest {
     risk = (Risk) risk.doAction(RiskAction.select(0));
     risk = (Risk) risk.doAction(RiskAction.select(1));
     risk = (Risk) risk.doAction(RiskAction.select(2));
-    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 5));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
     risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
 
     assertEquals(Set.of(RiskAction.casualties(0, 2),
