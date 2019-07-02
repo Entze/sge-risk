@@ -6,17 +6,22 @@ import dev.entze.sge.game.risk.configuration.RiskMissionConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
 import dev.entze.sge.game.risk.mission.RiskMission;
 import dev.entze.sge.game.risk.mission.RiskMissionType;
+import dev.entze.sge.game.risk.util.PriestLogic;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultEdge;
@@ -43,6 +48,7 @@ public class RiskBoard {
   private final Graph<Integer, DefaultEdge> gameBoard;
   private final Map<Integer, RiskTerritory> territories;
   private final Deque<RiskCard> deckOfCards;
+  private final Set<RiskMission> allMissions;
   private final RiskMission[] playerMissions;
 
   private final RiskCard[][] playerCards;
@@ -71,24 +77,13 @@ public class RiskBoard {
     fortifyOnlyWithNonFightingArmies = configuration.isFortifyOnlyWithNonFightingArmies();
     withMissions = configuration.isWithMissions();
     if (withMissions && !configuration.getMissions().isEmpty()) {
-      List<RiskMission> missionList = new ArrayList<>();
-      for (RiskMissionConfiguration mission : configuration.getMissions()) {
-        missionList.add(mission.getMission());
-      }
-      missionList.removeIf(
-          mission -> mission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER && mission
-              .getTargetIds().stream().anyMatch(id -> id >= numberOfPlayers));
-      Collections.shuffle(missionList);
+      allMissions = configuration.getMissions().stream().map(RiskMissionConfiguration::getMission)
+          .filter(m -> m.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER && m.getTargetIds()
+              .stream().allMatch(i -> i < numberOfPlayers)).collect(Collectors.toUnmodifiableSet());
       playerMissions = new RiskMission[numberOfPlayers];
-      for (int i = 0; i < playerMissions.length; i++) {
-        playerMissions[i] = missionList.get(i);
-        final int finalI = i;
-        if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
-            && playerMissions[i].getTargetIds().stream().anyMatch(id -> id == finalI)) {
-          playerMissions[i] = RiskMission.FALLBACK;
-        }
-      }
+      selectRandomMissions(new ArrayList<>(allMissions), playerMissions);
     } else {
+      allMissions = null;
       playerMissions = null;
     }
     Set<RiskTerritoryConfiguration> territoriesConfiguration = configuration.getTerritories();
@@ -166,7 +161,8 @@ public class RiskBoard {
         riskBoard.reinforcementAtLeast, riskBoard.reinforcementThreshold,
         riskBoard.occupyOnlyWithAttackingArmies, riskBoard.fortifyOnlyFromSingleTerritory,
         riskBoard.fortifyOnlyWithNonFightingArmies, riskBoard.withMissions,
-        riskBoard.gameBoard, riskBoard.territories, riskBoard.deckOfCards, riskBoard.playerMissions,
+        riskBoard.gameBoard, riskBoard.territories, riskBoard.deckOfCards, riskBoard.allMissions,
+        riskBoard.playerMissions,
         riskBoard.playerCards,
         riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.attackingId,
         riskBoard.defendingId, riskBoard.troops, riskBoard.phase, riskBoard.map);
@@ -178,7 +174,8 @@ public class RiskBoard {
       boolean fortifyOnlyFromSingleTerritory, boolean fortifyOnlyWithNonFightingArmies,
       boolean withMissions,
       Graph<Integer, DefaultEdge> gameBoard, Map<Integer, RiskTerritory> territories,
-      Collection<RiskCard> deckOfCards, RiskMission[] playerMissions, RiskCard[][] playerCards,
+      Collection<RiskCard> deckOfCards, Set<RiskMission> allMissions, RiskMission[] playerMissions,
+      RiskCard[][] playerCards,
       Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements, int attackingId,
       int defendingId, int troops, RiskPhase phase,
       String map) {
@@ -196,6 +193,7 @@ public class RiskBoard {
     this.gameBoard = gameBoard;
     this.territories = Collections.unmodifiableMap(copyTerritories(territories));
     this.deckOfCards = deckOfCards != null ? new ArrayDeque<>(deckOfCards) : null;
+    this.allMissions = allMissions;
     this.playerMissions = playerMissions != null ? playerMissions.clone() : null;
     this.playerCards = playerCards != null ? playerCards.clone() : null;
     this.continents = continents;
@@ -261,8 +259,7 @@ public class RiskBoard {
         .max(reinforcementAtLeast, occupiedTerritories / reinforcementThreshold);
 
     for (Entry<Integer, RiskContinent> continent : continents.entrySet()) {
-      if (territories.values().stream().filter(t -> t.getContinentId() == continent.getKey())
-          .allMatch(t -> t.getOccupantPlayerId() == player)) {
+      if (continentConquered(player, continent.getKey())) {
         reinforcements += continent.getValue().getTroopBonus();
       }
     }
@@ -366,6 +363,15 @@ public class RiskBoard {
         .collect(Collectors.toSet());
   }
 
+  public int nrOfTerritoriesOccupiedByPlayer(final int playerId) {
+    return Math.toIntExact(territories.entrySet().stream()
+        .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId).count());
+  }
+
+  public boolean playerStillAlive(int playerId) {
+    return nrOfTerritoriesOccupiedByPlayer(playerId) > 0;
+  }
+
   public Set<Integer> occupiedTerritoriesByPlayerWithMoreThan1Troops(final int playerId) {
     return territories.entrySet().stream()
         .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId
@@ -383,11 +389,140 @@ public class RiskBoard {
     return attackingId >= 0 && defendingId >= 0 && troops > 0;
   }
 
+  public PriestLogic missionFulfilled(int player) {
+    if (playerMissions == null) {
+      return PriestLogic.FALSE;
+    }
+    RiskMission mission = playerMissions[player];
+
+    if (mission.getRiskMissionType() == RiskMissionType.WILDCARD ||
+        mission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER) {
+      return missionFulfilled(mission);
+    } else if (mission.getRiskMissionType() == RiskMissionType.OCCUPY_TERRITORY) {
+      return PriestLogic.fromBoolean(
+          territoriesOccupied(player, mission.getTargetIds(), mission.getOccupyingWith()));
+    } else if (mission.getRiskMissionType() == RiskMissionType.CONQUER_CONTINENT) {
+      Set<Integer> conqueredContinents = playerConqueredContinents()
+          .getOrDefault(player, Collections.emptySet());
+      return PriestLogic.fromBoolean(conqueredContinents.size() >= mission.getTargetIds().size()
+          && mission.getTargetIds().stream().filter(i -> i >= 0)
+          .allMatch(conqueredContinents::contains));
+    }
+
+    return PriestLogic.FALSE;
+  }
+
+  public PriestLogic missionFulfilled(RiskMission mission) {
+    if (mission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER) {
+      return PriestLogic
+          .fromBoolean(mission.getTargetIds().stream().noneMatch(this::playerStillAlive));
+    } else if (mission.getRiskMissionType() == RiskMissionType.CONQUER_CONTINENT) {
+      return PriestLogic.fromBoolean(playerConqueredContinents().entrySet().stream()
+          .anyMatch(
+              e -> e.getValue().size() >= mission.getTargetIds().size()
+                  //at least the required amount of continents are conquered
+                  && mission.getTargetIds().stream().filter(id -> id >= 0)
+                  .allMatch(
+                      id -> e.getValue()
+                          .contains(id)))); //all the required continents are conquered
+    } else if (mission.getRiskMissionType() == RiskMissionType.OCCUPY_TERRITORY) {
+      return PriestLogic.fromBoolean(IntStream.range(0, numberOfPlayers).anyMatch(
+          p -> territoriesOccupied(p, mission.getTargetIds(), mission.getOccupyingWith())));
+    } else if (mission.getRiskMissionType() == RiskMissionType.WILDCARD) {
+      PriestLogic v = PriestLogic.FALSE;
+      Iterator<RiskMission> iterator = allMissions.stream()
+          .filter(m -> m.getRiskMissionType() != RiskMissionType.WILDCARD)
+          .iterator(); //TODO: TEST, potential source of bugs
+      if (iterator.hasNext()) {
+        RiskMission aMission = iterator.next();
+        v = missionFulfilled(aMission);
+        while (iterator.hasNext() && PriestLogic.certain(v)) {
+          aMission = iterator.next();
+          v = PriestLogic.maybe(v, missionFulfilled(aMission));
+        }
+      }
+      return v;
+    }
+
+    return PriestLogic.FALSE;
+  }
+
+  private boolean continentsConquered(int player, Collection<Integer> targetIds) {
+    return targetIds.stream().allMatch(c -> continentConquered(player, c));
+  }
+
+  private boolean continentConquered(int player, int continent) {
+    return continents.containsKey(continent) && territories.values().stream()
+        .filter(t -> t.getContinentId() == continent)
+        .allMatch(t -> t.getOccupantPlayerId() == player);
+  }
+
+  private boolean territoriesOccupied(int player, Collection<Integer> targetIds, int atLeast) {
+    Set<Integer> occupiedTerritories = occupiedTerritoriesByPlayer(player);
+
+    return occupiedTerritories.size() <= targetIds.size() // enough territories occupied
+        && occupiedTerritories.stream().allMatch(
+        t -> getTerritoryTroops(t) >= atLeast)
+        // all territories occupied with at least required amount
+        && targetIds.stream().filter(i -> i >= 0)
+        .allMatch(occupiedTerritories::contains); // all required territories occupied
+  }
+
+  private Map<Integer, Set<Integer>> playerConqueredContinents() {
+    Map<Integer, Map<Integer, RiskTerritory>> continents = new HashMap<>();
+    for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
+      int continent = territory.getValue().getContinentId();
+      continents.putIfAbsent(continent, new HashMap<>());
+      continents.get(continent).put(territory.getKey(), territory.getValue());
+    }
+
+    Set<Integer> toRemove = new TreeSet<>();
+
+    for (Entry<Integer, Map<Integer, RiskTerritory>> continent : continents.entrySet()) {
+      if (continent.getValue().values().stream().mapToInt(RiskTerritory::getOccupantPlayerId)
+          .distinct().count() != 1) {
+        toRemove.add(continent.getKey());
+      }
+    }
+
+    for (Integer remove : toRemove) {
+      continents.remove(remove);
+    }
+
+    Map<Integer, Set<Integer>> playerConqueredContinents = new HashMap<>();
+
+    for (Entry<Integer, Map<Integer, RiskTerritory>> continent : continents.entrySet()) {
+      int player = continent.getValue().values().stream().findFirst()
+          .map(RiskTerritory::getOccupantPlayerId).orElse(-1);
+
+      if (player >= 0) {
+        playerConqueredContinents.putIfAbsent(player, new TreeSet<>());
+        playerConqueredContinents.get(player).add(continent.getKey());
+      }
+
+    }
+
+    return playerConqueredContinents;
+  }
+
   private enum RiskPhase {
     REINFORCEMENT,
     ATTACK,
     OCCUPY,
     FORTIFY,
+  }
+
+  private static void selectRandomMissions(List<RiskMission> missionList,
+      RiskMission[] playerMissions) {
+    Collections.shuffle(missionList);
+    for (int i = 0; i < playerMissions.length; i++) {
+      playerMissions[i] = missionList.get(i);
+      final int finalI = i;
+      if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
+          && playerMissions[i].getTargetIds().stream().anyMatch(id -> id == finalI)) {
+        playerMissions[i] = RiskMission.FALLBACK;
+      }
+    }
   }
 
 }
