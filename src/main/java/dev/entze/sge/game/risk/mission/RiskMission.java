@@ -2,6 +2,7 @@ package dev.entze.sge.game.risk.mission;
 
 import dev.entze.sge.game.risk.configuration.RiskMissionConfiguration;
 import java.util.List;
+import java.util.Objects;
 
 public class RiskMission {
 
@@ -35,4 +36,22 @@ public class RiskMission {
     return occupyingWith;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    RiskMission that = (RiskMission) o;
+    return occupyingWith == that.occupyingWith &&
+        riskMissionType == that.riskMissionType &&
+        targetIds.equals(that.targetIds);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(riskMissionType, targetIds, occupyingWith);
+  }
 }

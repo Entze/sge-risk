@@ -121,7 +121,7 @@ public enum PriestLogic {
     return a != TRUE;
   }
 
-  public static boolean pessimistic(PriestLogic a) {
+  public static boolean valid(PriestLogic a) {
     return a == TRUE;
   }
 

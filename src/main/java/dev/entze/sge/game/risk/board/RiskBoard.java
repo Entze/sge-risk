@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,9 +78,12 @@ public class RiskBoard {
     fortifyOnlyWithNonFightingArmies = configuration.isFortifyOnlyWithNonFightingArmies();
     withMissions = configuration.isWithMissions();
     if (withMissions && !configuration.getMissions().isEmpty()) {
-      allMissions = configuration.getMissions().stream().map(RiskMissionConfiguration::getMission)
+      Set<RiskMission> set = configuration.getMissions().stream()
+          .map(RiskMissionConfiguration::getMission)
           .filter(m -> m.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER && m.getTargetIds()
-              .stream().allMatch(i -> i < numberOfPlayers)).collect(Collectors.toUnmodifiableSet());
+              .stream().allMatch(i -> i < numberOfPlayers)).collect(Collectors.toSet());
+      set.add(RiskMission.FALLBACK);
+      allMissions = Collections.unmodifiableSet(set);
       playerMissions = new RiskMission[numberOfPlayers];
       selectRandomMissions(new ArrayList<>(allMissions), playerMissions);
     } else {

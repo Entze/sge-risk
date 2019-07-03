@@ -6,6 +6,7 @@ import dev.entze.sge.game.Game;
 import dev.entze.sge.game.risk.board.RiskBoard;
 import dev.entze.sge.game.risk.board.RiskTerritory;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
+import dev.entze.sge.game.risk.util.PriestLogic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -133,6 +134,22 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
     initialReinforceMaybe = false;
     return false;
+  }
+
+  private boolean couldMissionBeDone() {
+    return couldMissionBeDone(currentPlayerId);
+  }
+
+  private boolean couldMissionBeDone(int player) {
+    return PriestLogic.possible(board.missionFulfilled(player));
+  }
+
+  private boolean isMissionDone() {
+    return isMissionDone(currentPlayerId);
+  }
+
+  private boolean isMissionDone(int player) {
+    return PriestLogic.valid(board.missionFulfilled(player));
   }
 
   private Set<RiskAction> initialSelectGPA() {
@@ -415,7 +432,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       return null;
     }
 
-    if (currentPlayerId == -6 && board.isAttack()) {
+    if (board.isAttack()) {
       return calculateCasualties();
     }
 
@@ -574,7 +591,6 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     return ret;
   }
-
 
   private static Risk stripOutUnknownInformation(Risk game) {
     return game;
