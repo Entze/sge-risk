@@ -402,7 +402,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     Risk next = new Risk(this);
-    next.currentPlayerId = -1;
+    next.currentPlayerId = -6;
 
     next.board.startAttack(attackingId, defendingId, troops);
 
@@ -411,10 +411,18 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public RiskAction determineNextAction() {
-    if (currentPlayerId >= 0 || !board.isAttack()) {
+    if (currentPlayerId >= 0) {
       return null;
     }
 
+    if (currentPlayerId == -6 && board.isAttack()) {
+      return calculateCasualties();
+    }
+
+    return null;
+  }
+
+  private RiskAction calculateCasualties() {
     int attacker = board.getNrOfAttackerDice();
     int defender = board.getNrOfDefenderDice();
 

@@ -515,6 +515,9 @@ public class RiskBoard {
   private static void selectRandomMissions(List<RiskMission> missionList,
       RiskMission[] playerMissions) {
     Collections.shuffle(missionList);
+    for (int i = missionList.size() - 1; i < playerMissions.length; i++) {
+      missionList.add(RiskMission.FALLBACK);
+    }
     for (int i = 0; i < playerMissions.length; i++) {
       playerMissions[i] = missionList.get(i);
       final int finalI = i;
