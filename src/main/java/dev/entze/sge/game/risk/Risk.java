@@ -216,10 +216,12 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   @Override
   public boolean isValidAction(RiskAction riskAction) {
     if (currentPlayerId < 0) {
-      int armiesFought = Math.min(board.getNrOfAttackerDice(), board.getNrOfDefenderDice());
-      int attackerCasualties = riskAction.attackerCasualties();
-      int defenderCasualties = riskAction.defenderCasualties();
-      return attackerCasualties + defenderCasualties == armiesFought;
+      if (board.isAttack()) {
+        int armiesFought = Math.min(board.getNrOfAttackerDice(), board.getNrOfDefenderDice());
+        int attackerCasualties = riskAction.attackerCasualties();
+        int defenderCasualties = riskAction.defenderCasualties();
+        return attackerCasualties + defenderCasualties == armiesFought;
+      }
     } else if (isInitialSelect()) {
       int selected = riskAction.selected();
       return board.isTerritory(selected) && !(
@@ -253,7 +255,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Risk next = null;
     if (currentPlayerId < 0) {
       if (board.isAttack()) {
-
+        next = casualtiesDA(riskAction);
       }
     } else if (isInitialSelect()) {
       next = initialSelectDA(riskAction);
@@ -422,6 +424,26 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     next.currentPlayerId = -6;
 
     next.board.startAttack(attackingId, defendingId, troops);
+
+    return next;
+  }
+
+  private Risk casualtiesDA(RiskAction riskAction) {
+    int attackerCasualties = riskAction.attackerCasualties();
+    int defenderCasualties = riskAction.defenderCasualties();
+    {
+      int armiesFought = Math.min(board.getNrOfAttackerDice(), board.getNrOfDefenderDice());
+
+      if (attackerCasualties + defenderCasualties != armiesFought) {
+        throw new IllegalArgumentException(
+            attackerCasualties + " attacking casualties and " + defenderCasualties
+                + " do not match " + armiesFought + ", could therefore not subtract casualties");
+      }
+
+    }
+
+    Risk next = new Risk(this);
+    next.board.endAttack(attackerCasualties, defenderCasualties);
 
     return next;
   }

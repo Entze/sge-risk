@@ -43,5 +43,14 @@ public class RiskTerritory {
     this.troops = troops;
   }
 
+  public int addTroops(int troops) {
+    this.troops += troops;
+    return this.troops;
+  }
+
+  public int removeTroops(int troops) {
+    this.troops -= troops;
+    return this.troops;
+  }
 
 }

@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +56,11 @@ public class RiskBoard {
   private final Map<Integer, RiskContinent> continents;
 
   private final int[] nonDeployedReinforcements;
-  //private final Map<Integer, Integer> involvedTroopsInAttacks;
+  private final Map<Integer, Integer> involvedTroopsInAttacks;
   private int attackingId;
   private int defendingId;
   private int troops;
+  private boolean hasOccupiedCountry;
   private RiskPhase phase;
 
   private final String map;
@@ -150,9 +150,12 @@ public class RiskBoard {
       }
     }
 
+    involvedTroopsInAttacks = new HashMap<>();
+
     attackingId = -1;
     defendingId = -1;
     troops = 0;
+    hasOccupiedCountry = false;
 
     phase = RiskPhase.REINFORCEMENT;
 
@@ -168,8 +171,10 @@ public class RiskBoard {
         riskBoard.gameBoard, riskBoard.territories, riskBoard.deckOfCards, riskBoard.allMissions,
         riskBoard.playerMissions,
         riskBoard.playerCards,
-        riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.attackingId,
-        riskBoard.defendingId, riskBoard.troops, riskBoard.phase, riskBoard.map);
+        riskBoard.continents, riskBoard.nonDeployedReinforcements,
+        riskBoard.involvedTroopsInAttacks, riskBoard.attackingId,
+        riskBoard.defendingId, riskBoard.troops, riskBoard.hasOccupiedCountry, riskBoard.phase,
+        riskBoard.map);
   }
 
   public RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice, boolean withCards,
@@ -180,8 +185,9 @@ public class RiskBoard {
       Graph<Integer, DefaultEdge> gameBoard, Map<Integer, RiskTerritory> territories,
       Collection<RiskCard> deckOfCards, Set<RiskMission> allMissions, RiskMission[] playerMissions,
       RiskCard[][] playerCards,
-      Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements, int attackingId,
-      int defendingId, int troops, RiskPhase phase,
+      Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements,
+      Map<Integer, Integer> involvedTroopsInAttacks, int attackingId,
+      int defendingId, int troops, boolean hasOccupiedCountry, RiskPhase phase,
       String map) {
     this.numberOfPlayers = numberOfPlayers;
     this.maxAttackerDice = maxAttackerDice;
@@ -202,9 +208,11 @@ public class RiskBoard {
     this.playerCards = playerCards != null ? playerCards.clone() : null;
     this.continents = continents;
     this.nonDeployedReinforcements = nonDeployedReinforcements.clone();
+    this.involvedTroopsInAttacks = new HashMap<>(involvedTroopsInAttacks);
     this.attackingId = attackingId;
     this.defendingId = defendingId;
     this.troops = troops;
+    this.hasOccupiedCountry = hasOccupiedCountry;
     this.phase = phase;
     this.map = map;
   }
@@ -230,6 +238,12 @@ public class RiskBoard {
         : -1;
   }
 
+  public void setTerritoryOccupantId(int territoryOccupantId, int playerId) {
+    if (isTerritory(territoryOccupantId)) {
+      territories.get(territoryOccupantId).setOccupantPlayerId(playerId);
+    }
+  }
+
   public int getTerritoryTroops(int territoryId) {
     return territories.containsKey(territoryId) ? territories.get(territoryId).getTroops() : 0;
   }
@@ -253,6 +267,8 @@ public class RiskBoard {
 
   public void endMove(int nextPlayer) {
     phase = RiskPhase.REINFORCEMENT;
+    involvedTroopsInAttacks.clear();
+    hasOccupiedCountry = false;
     awardReinforcements(nextPlayer);
   }
 
@@ -390,7 +406,41 @@ public class RiskBoard {
   }
 
   public boolean isAttack() {
-    return attackingId >= 0 && defendingId >= 0 && troops > 0;
+    return phase == RiskPhase.ATTACK && attackingId >= 0 && defendingId >= 0 && troops > 0;
+  }
+
+  public void endAttack(int attackerCasualties, int defendingCasualties) {
+    if (isAttack()) {
+      territories.get(attackingId).removeTroops(attackerCasualties);
+      territories.get(defendingId).removeTroops(defendingCasualties);
+      troops -= attackerCasualties;
+      involvedTroopsInAttacks.compute(attackingId,
+          (k, v) -> (v == null) ? (troops)
+              : Math.max(v, troops));
+
+      if (getTerritoryTroops(defendingId) == 0) {
+        setTerritoryOccupantId(defendingId, getTerritoryOccupantId(attackingId));
+        phase = RiskPhase.OCCUPY;
+        hasOccupiedCountry = true;
+        if (occupyOnlyWithAttackingArmies) {
+          occupy(troops);
+        }
+      } else {
+        attackingId = -1;
+        defendingId = -1;
+        troops = 0;
+      }
+    }
+  }
+
+  public void occupy(int troops) {
+    territories.get(attackingId).removeTroops(troops);
+    territories.get(defendingId).addTroops(troops);
+    involvedTroopsInAttacks.compute(attackingId, (k, v) -> v == null ? 0 : Math.max(0, v - troops));
+    involvedTroopsInAttacks.compute(defendingId, (k, v) -> v == null ? troops : v + troops);
+    attackingId = -1;
+    defendingId = -1;
+    this.troops = 0;
   }
 
   public PriestLogic missionFulfilled(int player) {

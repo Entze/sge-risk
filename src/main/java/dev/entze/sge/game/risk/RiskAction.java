@@ -40,6 +40,10 @@ public class RiskAction {
     return new RiskAction(attackingId, defendingId, troops);
   }
 
+  public static RiskAction occupy(int troops) {
+    return new RiskAction(troops);
+  }
+
   public static RiskAction fortify(int fortifyingId, int fortifiedId, int troops) {
     return new RiskAction(fortifyingId, fortifiedId, troops);
   }
