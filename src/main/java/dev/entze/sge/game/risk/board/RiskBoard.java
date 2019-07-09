@@ -365,7 +365,7 @@ public class RiskBoard {
   }
 
   public int getMaxAttackingTroops(int attackingId) {
-    int troops = getTerritoryTroops(attackingId);
+    int troops = getTerritoryTroops(attackingId) - 1;
     if (occupyOnlyWithAttackingArmies) {
       return troops;
     }
@@ -435,6 +435,14 @@ public class RiskBoard {
     return attackerId;
   }
 
+  public int occupyMaximum() {
+    if (occupyOnlyWithAttackingArmies) {
+      return troops;
+    }
+
+    return getTerritoryTroops(attackingId) - 1;
+  }
+
   public void occupy(int troops) {
     territories.get(attackingId).removeTroops(troops);
     territories.get(defendingId).addTroops(troops);
@@ -443,6 +451,7 @@ public class RiskBoard {
     attackingId = -1;
     defendingId = -1;
     this.troops = 0;
+    phase = RiskPhase.ATTACK;
   }
 
   public PriestLogic missionFulfilled(int player) {

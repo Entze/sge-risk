@@ -412,6 +412,38 @@ public class RiskTest {
   }
 
   @Test
+  public void test_game_doAction_attack_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    config.setOccupyOnlyWithAttackingArmies(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+
+    Set<RiskAction> expected = Stream.concat(
+        IntStream.range(1, 6).mapToObj(t -> RiskAction.attack(1, 0, t)),
+        IntStream.range(1, 6).mapToObj(t -> RiskAction.attack(1, 2, t))
+    ).collect(Collectors.toSet());
+
+    expected.add(RiskAction.endPhase());
+
+    assertEquals(expected, risk.getPossibleActions());
+
+    assertEquals(1, risk.getCurrentPlayer());
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 5));
+    assertTrue(0 > risk.getCurrentPlayer());
+
+
+  }
+
+  @Test
   public void test_game_doAction_diceThrow_1() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setChooseInitialTerritories(true);
@@ -501,6 +533,160 @@ public class RiskTest {
 
   }
 
+  @Test
+  public void test_game_doAction_diceThrow_3() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    config.setOccupyOnlyWithAttackingArmies(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 5));
+
+    assertTrue(0 > risk.getCurrentPlayer());
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(6, risk.getBoard().getTerritoryTroops(1));
+
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(2, risk.getBoard().getTerritoryTroops(0));
+
+    assertEquals(Set.of(RiskAction.casualties(0, 2),
+        RiskAction.casualties(1, 1),
+        RiskAction.casualties(2, 0)), risk.getPossibleActions());
+
+    assertTrue(risk.isValidAction(RiskAction.casualties(1, 1)));
+    risk = (Risk) risk.doAction(RiskAction.casualties(1, 1));
+
+    assertEquals(1, risk.getCurrentPlayer());
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(5, risk.getBoard().getTerritoryTroops(1));
+
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(0));
+
+  }
+
+  @Test
+  public void test_game_doAction_diceThrow_4() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    config.setOccupyOnlyWithAttackingArmies(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 5));
+
+    assertTrue(0 > risk.getCurrentPlayer());
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(6, risk.getBoard().getTerritoryTroops(1));
+
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(2, risk.getBoard().getTerritoryTroops(0));
+
+    assertEquals(Set.of(RiskAction.casualties(0, 2),
+        RiskAction.casualties(1, 1),
+        RiskAction.casualties(2, 0)), risk.getPossibleActions());
+
+    assertTrue(risk.isValidAction(RiskAction.casualties(1, 1)));
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+
+    assertEquals(1, risk.getCurrentPlayer());
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(1));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(5, risk.getBoard().getTerritoryTroops(0));
+
+  }
+
+  @Test
+  public void test_game_doAction_occupy_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(Set.of(RiskAction.occupy(1), RiskAction.occupy(2), RiskAction.occupy(3),
+        RiskAction.occupy(4), RiskAction.occupy(5)),
+        risk.getPossibleActions());
+
+    assertTrue(risk.isValidAction(RiskAction.occupy(1)));
+    risk = (Risk) risk.doAction(RiskAction.occupy(1));
+
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(5, risk.getBoard().getTerritoryTroops(1));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(0));
+
+  }
+
+  @Test
+  public void test_game_doAction_occupy_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    config.setOccupyOnlyWithAttackingArmies(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+
+    assertEquals(1, risk.getCurrentPlayer());
+
+  }
   //TODO: Test occupy only with attacking armies
 
   @Test

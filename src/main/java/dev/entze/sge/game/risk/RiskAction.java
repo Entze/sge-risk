@@ -5,6 +5,8 @@ import java.util.Objects;
 public class RiskAction {
 
   private static final RiskAction END_PHASE = new RiskAction(-2, -4, -8);
+  private static final int CASUALTIES_ID = -1;
+  private static final int OCCUPY_ID = -2;
 
   private final int srcId;
   private final int targetId;
@@ -41,7 +43,7 @@ public class RiskAction {
   }
 
   public static RiskAction occupy(int troops) {
-    return new RiskAction(troops);
+    return new RiskAction(OCCUPY_ID, OCCUPY_ID, troops);
   }
 
   public static RiskAction fortify(int fortifyingId, int fortifiedId, int troops) {
@@ -53,7 +55,8 @@ public class RiskAction {
   }
 
   public static RiskAction casualties(int attacker, int defender) {
-    return new RiskAction(attacker | (defender << (Integer.SIZE / 2)));
+    return new RiskAction(CASUALTIES_ID, CASUALTIES_ID,
+        attacker | (defender << (Integer.SIZE / 2)));
   }
 
   public int selected() {
@@ -121,8 +124,12 @@ public class RiskAction {
       return "end phase";
     }
 
-    if (srcId == targetId && srcId == -1) {
+    if (srcId == targetId && srcId == CASUALTIES_ID) {
       return String.format("%dX%d", this.attackerCasualties(), this.defenderCasualties());
+    }
+
+    if (srcId == targetId && srcId == OCCUPY_ID) {
+      return "O" + value;
     }
 
     if (srcId == -1) {

@@ -20,6 +20,10 @@ import java.util.stream.IntStream;
 
 public class Risk implements Game<RiskAction, RiskBoard> {
 
+  private final static int CASUALTIES_PLAYER = -6;
+  private final static int DRAW_CARD_PLAYER = -2;
+  private final static int MISSION_FULFILLED_PLAYER = -3;
+
   private final boolean canonical;
   private int currentPlayerId;
   private List<ActionRecord<RiskAction>> actionRecords;
@@ -110,6 +114,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       return reinforceGPA();
     } else if (board.isAttackPhase()) {
       return attackGPA();
+    } else if (board.isOccupyPhase()) {
+      return occupyGPA();
     }
 
     return Collections.emptySet();
@@ -199,6 +205,11 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   private Set<RiskAction> casualtiesGPA() {
     return possibleCasualties(board.getNrOfAttackerDice(), board.getNrOfDefenderDice());
+  }
+
+  private Set<RiskAction> occupyGPA() {
+    return IntStream.rangeClosed(1, board.occupyMaximum()).mapToObj(RiskAction::occupy).collect(
+        Collectors.toSet());
   }
 
   private static Set<RiskAction> possibleCasualties(final int attackerDice,
@@ -421,7 +432,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     Risk next = new Risk(this);
-    next.currentPlayerId = -6;
+    next.currentPlayerId = CASUALTIES_PLAYER;
 
     next.board.startAttack(attackingId, defendingId, troops);
 
