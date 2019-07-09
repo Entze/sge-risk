@@ -208,7 +208,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private Set<RiskAction> occupyGPA() {
-    return IntStream.rangeClosed(1, board.occupyMaximum()).mapToObj(RiskAction::occupy).collect(
+    return IntStream.rangeClosed(1, board.getMaxOccupy()).mapToObj(RiskAction::occupy).collect(
         Collectors.toSet());
   }
 
@@ -257,6 +257,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
           && troops < board.getTerritoryTroops(attackingId)
           && board.areNeighbors(attackingId, defendingId);
 
+    } else if (board.isOccupyPhase()) {
+      return 1 <= riskAction.troops() && riskAction.troops() <= board.getMaxOccupy();
     }
     return false;
   }
@@ -277,7 +279,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     } else if (board.isAttackPhase()) {
       next = attackDA(riskAction);
     } else if (board.isOccupyPhase()) {
-
+      next = occupyDA(riskAction);
     } else if (board.isFortifyPhase()) {
 
     }
@@ -455,6 +457,18 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     Risk next = new Risk(this);
     next.currentPlayerId = next.board.endAttack(attackerCasualties, defenderCasualties);
+    return next;
+  }
+
+  private Risk occupyDA(RiskAction riskAction) {
+    if (!(1 <= riskAction.troops() && riskAction.troops() <= board.getMaxOccupy())) {
+      throw new IllegalArgumentException(
+          riskAction.troops() + " is an illegal number of troops, could therefore not occupy");
+    }
+
+    Risk next = new Risk(this);
+    next.board.occupy(riskAction.troops());
+
     return next;
   }
 

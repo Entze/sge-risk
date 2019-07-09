@@ -686,8 +686,17 @@ public class RiskTest {
 
     assertEquals(1, risk.getCurrentPlayer());
 
+
+    assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
+    assertEquals(1, risk.getBoard().getTerritoryTroops(2));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
+    assertEquals(3, risk.getBoard().getTerritoryTroops(1));
+
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(3, risk.getBoard().getTerritoryTroops(0));
+
   }
-  //TODO: Test occupy only with attacking armies
 
   @Test
   public void test_game_getGame_independent() {

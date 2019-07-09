@@ -435,7 +435,7 @@ public class RiskBoard {
     return attackerId;
   }
 
-  public int occupyMaximum() {
+  public int getMaxOccupy() {
     if (occupyOnlyWithAttackingArmies) {
       return troops;
     }
