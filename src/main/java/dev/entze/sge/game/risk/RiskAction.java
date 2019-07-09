@@ -7,6 +7,7 @@ public class RiskAction {
   private static final RiskAction END_PHASE = new RiskAction(-2, -4, -8);
   private static final int CASUALTIES_ID = -1;
   private static final int OCCUPY_ID = -2;
+  private static final int CARD_ID = -3;
 
   private final int srcId;
   private final int targetId;
@@ -59,6 +60,10 @@ public class RiskAction {
         attacker | (defender << (Integer.SIZE / 2)));
   }
 
+  public static RiskAction card(int id) {
+    return new RiskAction(CARD_ID, CARD_ID, id);
+  }
+
   public int selected() {
     return targetId;
   }
@@ -76,6 +81,10 @@ public class RiskAction {
   }
 
   public int troops() {
+    return value;
+  }
+
+  public int cardId() {
     return value;
   }
 
@@ -130,6 +139,10 @@ public class RiskAction {
 
     if (srcId == targetId && srcId == OCCUPY_ID) {
       return "O" + value;
+    }
+
+    if (srcId == targetId && srcId == CARD_ID) {
+      return "C" + value;
     }
 
     if (srcId == -1) {

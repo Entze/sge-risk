@@ -686,7 +686,6 @@ public class RiskTest {
 
     assertEquals(1, risk.getCurrentPlayer());
 
-
     assertEquals(0, risk.getBoard().getTerritoryOccupantId(2));
     assertEquals(1, risk.getBoard().getTerritoryTroops(2));
 
@@ -697,6 +696,40 @@ public class RiskTest {
     assertEquals(3, risk.getBoard().getTerritoryTroops(0));
 
   }
+
+  @Test
+  public void test_game_doAction_drawCard_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+
+    risk = (Risk) risk.doAction(RiskAction.occupy(1));
+
+    Risk riskPlayer = (Risk) risk.getGame();
+
+    assertTrue(riskPlayer.isValidAction(RiskAction.endPhase()));
+
+    risk = (Risk) riskPlayer.doAction(RiskAction.endPhase());
+
+    assertTrue(0 > riskPlayer.getCurrentPlayer());
+
+    assertEquals(Set.of(RiskAction.card(0), RiskAction.card(1), RiskAction.card(2)),
+        riskPlayer.getPossibleActions());
+
+  }
+
 
   @Test
   public void test_game_getGame_independent() {
