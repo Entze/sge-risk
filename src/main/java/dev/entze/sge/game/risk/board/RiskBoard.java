@@ -409,7 +409,8 @@ public class RiskBoard {
     return phase == RiskPhase.ATTACK && attackingId >= 0 && defendingId >= 0 && troops > 0;
   }
 
-  public void endAttack(int attackerCasualties, int defendingCasualties) {
+  public int endAttack(int attackerCasualties, int defendingCasualties) {
+    int attackerId = getTerritoryOccupantId(attackingId);
     if (isAttack()) {
       territories.get(attackingId).removeTroops(attackerCasualties);
       territories.get(defendingId).removeTroops(defendingCasualties);
@@ -431,6 +432,7 @@ public class RiskBoard {
         troops = 0;
       }
     }
+    return attackerId;
   }
 
   public void occupy(int troops) {

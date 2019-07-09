@@ -443,8 +443,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     Risk next = new Risk(this);
-    next.board.endAttack(attackerCasualties, defenderCasualties);
-
+    next.currentPlayerId = next.board.endAttack(attackerCasualties, defenderCasualties);
     return next;
   }
 

@@ -449,9 +449,9 @@ public class RiskTest {
     assertEquals(1, risk.getBoard().getTerritoryTroops(2));
 
     assertEquals(1, risk.getBoard().getTerritoryOccupantId(1));
-    assertEquals(5, risk.getBoard().getTerritoryTroops(1));
+    assertEquals(6, risk.getBoard().getTerritoryTroops(1));
 
-    assertEquals(0, risk.getBoard().getTerritoryOccupantId(0));
+    assertEquals(1, risk.getBoard().getTerritoryOccupantId(0));
     assertEquals(0, risk.getBoard().getTerritoryTroops(0));
 
   }
@@ -500,7 +500,6 @@ public class RiskTest {
     assertEquals(1, risk.getBoard().getTerritoryTroops(0));
 
   }
-
 
   //TODO: Test occupy only with attacking armies
 
