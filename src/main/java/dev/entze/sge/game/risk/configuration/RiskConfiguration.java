@@ -89,10 +89,10 @@ public class RiskConfiguration {
       + "f+-------+m/a\\f/2\\f/n/5\\m+-------+e+v\\o\n"
       + "a+---/8/++-------------------+c\\3+---------+4|a---\\k+--+7+-+------------------+9\\8["
       + SIBERIA.getTerritoryId() + "]5\\c[" + YAKUTSK.getTerritoryId() + "]i+-------------+9\n"
-      + "9/c/z1\\1/8+------+4+----/1+-------+-------\\5/d|j\\9+----+9+t/f+8\n"
+      + "9/c/z1\\1/8+------+4+----/1+-------+-------\\5/6[" + SCANDINAVIA.getTerritoryId()
+      + "]6|j\\9+----+9+t/f+\n"
       + "3+----+4[" + ALASKA.getTerritoryId() + "]7/f[" + NORTHWEST_TERRITORY.getTerritoryId()
-      + "]d+-------++8/7|3/7|3[" + ICELAND.getTerritoryId() + "]3|8+--1+2[" + SCANDINAVIA
-      .getTerritoryId() + "]3+7+j+f\\9\\4+j+--+h\\7\n"
+      + "]d+-------++8/7|3/7|3[" + ICELAND.getTerritoryId() + "]3|8+--1+6+7+j+f\\9\\4+j+--+h\\\n"
       + "2/h/s/8/2\\6/8\\1/9+-------+7/3/6/1\\5/j/8[" + URAL.getTerritoryId()
       + "]8\\_8+2/1\\h/6+5+4[" + KAMCHATKA.getTerritoryId() + "]4+6\n"
       + "++6+-----------+--------------------+------+8|5\\---+a+j\\5/4+-----+3+---+j+k\\6/1\\/3+--------+2+---+6/1\\3/1\\8|6\n"
@@ -135,8 +135,8 @@ public class RiskConfiguration {
       + "z8/8+-+3+------+d/w\\1/h/8/zb\\z1\n"
       + "z7+----+3/d+-----+6/y+8[" + CENTRAL_AFRICA.getTerritoryId()
       + "]8/8/zb+-------+---------------+-------+5\n"
-      + "z6/4`1\\1/k+-----+z1\\f/8+zc|3[" + INDONESIA.getTerritoryId() + "]3|f|3[" + NEW_GUINEA
-      .getTerritoryId() + "]3|5\n"
+      + "z6/6\\1/k+-----+z1\\f/8+zc|3[" + INDONESIA.getTerritoryId() + "]3|f|3[" + NEW_GUINEA
+      .getTerritoryId() + "]3|\n"
       + "z6|7+s\\z1+---+9+8/1\\zb+-------+f+-------+5\n"
       + "z7\\6|t+z|4\\9\\6/3\\zj\\c/1|d\n"
       + "z8\\5+--+c[" + BRAZIL.getTerritoryId() + "]d|z+5\\9\\4/5\\zj\\a/2|d\n"
@@ -149,7 +149,7 @@ public class RiskConfiguration {
       + "zh|9\\7/zb+e/6+-----+zb+a+---------+9/1\n"
       + "zh|a\\5/zd\\9+--+zp|5[" + WESTERN_AUSTRALIA.getTerritoryId() + "]d/9+2\n"
       + "zh|b+3/zf+7/zt|i/a|2\n"
-      + "zh|5[" + ARGENTINA.getTerritoryId() + "]6\\1/zg|6/zu+-------------+.2/9+-+2\n"
+      + "zh|5[" + ARGENTINA.getTerritoryId() + "]6\\1/zg|6/zu+-------------+3/9+-+\n"
       + "zh|d+zh+-----+zzb\\1/9/5\n"
       + "zh|c/zzzz2+6+--+6\n"
       + "zh|9+-+zzzz4\\4/a\n"
