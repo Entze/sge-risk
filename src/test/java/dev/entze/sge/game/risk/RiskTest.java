@@ -717,16 +717,7 @@ public class RiskTest {
 
     risk = (Risk) risk.doAction(RiskAction.occupy(1));
 
-    Risk riskPlayer = (Risk) risk.getGame();
-
-    assertTrue(riskPlayer.isValidAction(RiskAction.endPhase()));
-
-    risk = (Risk) riskPlayer.doAction(RiskAction.endPhase());
-
-    assertTrue(0 > riskPlayer.getCurrentPlayer());
-
-    assertEquals(Set.of(RiskAction.card(0), RiskAction.card(1), RiskAction.card(2)),
-        riskPlayer.getPossibleActions());
+    //TODO: check if card was drawn
 
   }
 
