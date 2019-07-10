@@ -177,6 +177,22 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
     riskConfiguration.setMissions(validMissions);
     riskConfiguration.getInitialTroops();
 
+    StringBuilder stringBuilder = new StringBuilder();
+    for (RiskTerritoryConfiguration validTerritory : validTerritories) {
+      stringBuilder.append('[').append(validTerritory.getTerritoryId()).append(']').append(' ');
+    }
+    stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+    stringBuilder.append('\n');
+    for (RiskTerritoryConfiguration validTerritory : validTerritories) {
+      stringBuilder.append('{');
+      for (Integer connect : validTerritory.getConnects()) {
+        stringBuilder.append(connect).append(',');
+      }
+      stringBuilder.deleteCharAt(stringBuilder.length() - 1).append('}').append(' ');
+    }
+    stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+
+    riskConfiguration.setMap(stringBuilder.toString());
     return riskConfiguration;
   }
 
