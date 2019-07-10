@@ -60,7 +60,7 @@ public class RiskAction {
         attacker | (defender << (Integer.SIZE / 2)));
   }
 
-  public static RiskAction card(int id) {
+  public static RiskAction playCard(int id) {
     return new RiskAction(CARD_ID, CARD_ID, id);
   }
 

@@ -238,7 +238,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       return board.isTerritory(selected) && !(
           0 <= board.getTerritoryOccupantId(selected)
               && board.getTerritoryOccupantId(selected) < getNumberOfPlayers());
-    } else if (board.areReinforcementsLeft()) {
+    } else if (isInitialReinforce()) {
       return board.isTerritory(riskAction.reinforcedId()) && riskAction.troops() == 1
           && board.getTerritoryOccupantId(riskAction.reinforcedId()) == currentPlayerId;
     } else if (board.isReinforcementPhase()) {
@@ -247,15 +247,17 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       return 1 <= riskAction.troops() && riskAction.troops() <= reinforcementsLeft && board
           .isTerritory(reinforced) && board.getTerritoryOccupantId(reinforced) == currentPlayerId;
     } else if (board.isAttackPhase()) {
+
       int attackingId = riskAction.attackingId();
       int defendingId = riskAction.defendingId();
       int troops = riskAction.troops();
 
-      return board.getTerritoryOccupantId(attackingId) == this.currentPlayerId
-          && 0 < troops
-          && troops <= board.getMaxAttackingTroops(attackingId)
-          && troops < board.getTerritoryTroops(attackingId)
-          && board.areNeighbors(attackingId, defendingId);
+      return riskAction.isEndPhase() || (
+          board.getTerritoryOccupantId(attackingId) == this.currentPlayerId
+              && 0 < troops
+              && troops <= board.getMaxAttackingTroops(attackingId)
+              && troops < board.getTerritoryTroops(attackingId)
+              && board.areNeighbors(attackingId, defendingId));
 
     } else if (board.isOccupyPhase()) {
       return 1 <= riskAction.troops() && riskAction.troops() <= board.getMaxOccupy();
@@ -411,9 +413,20 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     int defendingId = riskAction.defendingId();
     int troops = riskAction.troops();
 
-    {
+    Risk next = new Risk(this);
+    if (!riskAction.isEndPhase()) {
       String errorMsg = "";
-      if (board.getTerritoryOccupantId(attackingId) != this.currentPlayerId) {
+      if (!(board.isTerritory(attackingId) && board.isTerritory(defendingId))) {
+        if (!board.isTerritory(attackingId)) {
+          errorMsg = "Attacking territoryId is not assigned any territory";
+        }
+        if (!board.isTerritory(defendingId)) {
+          if (!errorMsg.isEmpty()) {
+            errorMsg = errorMsg.concat(", ");
+          }
+          errorMsg = errorMsg.concat("Defending territoryId is not assigned any territory");
+        }
+      } else if (board.getTerritoryOccupantId(attackingId) != this.currentPlayerId) {
         errorMsg = "Attacking territory does not belong to currentPlayer";
       } else if (!(0 < troops
           && troops <= board.getMaxAttackingTroops(attackingId)
@@ -431,12 +444,13 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       if (!errorMsg.isEmpty()) {
         throw new IllegalArgumentException(errorMsg.concat(", could therefore not attack"));
       }
+
+      next.currentPlayerId = CASUALTIES_PLAYER;
+
+      next.board.startAttack(attackingId, defendingId, troops);
+    } else {
+      board.endAttackPhase();
     }
-
-    Risk next = new Risk(this);
-    next.currentPlayerId = CASUALTIES_PLAYER;
-
-    next.board.startAttack(attackingId, defendingId, troops);
 
     return next;
   }

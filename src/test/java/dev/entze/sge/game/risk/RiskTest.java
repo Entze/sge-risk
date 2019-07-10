@@ -698,7 +698,7 @@ public class RiskTest {
   }
 
   @Test
-  public void test_game_doAction_drawCard_1() {
+  public void test_game_doAction_endAttack_1() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setChooseInitialTerritories(true);
     Risk risk = new Risk(config, 2);
@@ -717,7 +717,12 @@ public class RiskTest {
 
     risk = (Risk) risk.doAction(RiskAction.occupy(1));
 
-    //TODO: check if card was drawn
+    assertTrue(risk.getPossibleActions().contains(RiskAction.endPhase()));
+    assertTrue(risk.isValidAction(RiskAction.endPhase()));
+
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+
+    assertEquals(1, risk.getCurrentPlayer());
 
   }
 

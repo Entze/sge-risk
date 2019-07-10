@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -78,12 +79,10 @@ public class RiskBoard {
     fortifyOnlyWithNonFightingArmies = configuration.isFortifyOnlyWithNonFightingArmies();
     withMissions = configuration.isWithMissions();
     if (withMissions && !configuration.getMissions().isEmpty()) {
-      Set<RiskMission> set = configuration.getMissions().stream()
+      allMissions = configuration.getMissions().stream()
           .map(RiskMissionConfiguration::getMission)
-          .filter(m -> m.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER && m.getTargetIds()
-              .stream().allMatch(i -> i < numberOfPlayers)).collect(Collectors.toSet());
-      set.add(RiskMission.FALLBACK);
-      allMissions = Collections.unmodifiableSet(set);
+          .filter(m -> m.getRiskMissionType() != RiskMissionType.LIBERATE_PLAYER || m.getTargetIds()
+              .stream().allMatch(i -> i < numberOfPlayers)).collect(Collectors.toUnmodifiableSet());
       playerMissions = new RiskMission[numberOfPlayers];
       selectRandomMissions(new ArrayList<>(allMissions), playerMissions);
     } else {
@@ -435,6 +434,13 @@ public class RiskBoard {
     return attackerId;
   }
 
+  public void endAttackPhase() {
+    phase = RiskPhase.FORTIFY;
+    attackingId = -1;
+    defendingId = -1;
+    troops = 0;
+  }
+
   public int getMaxOccupy() {
     if (occupyOnlyWithAttackingArmies) {
       return troops;
@@ -579,18 +585,44 @@ public class RiskBoard {
 
   private static void selectRandomMissions(List<RiskMission> missionList,
       RiskMission[] playerMissions) {
-    Collections.shuffle(missionList);
-    for (int i = missionList.size() - 1; i < playerMissions.length; i++) {
-      missionList.add(RiskMission.FALLBACK);
-    }
-    for (int i = 0; i < playerMissions.length; i++) {
-      playerMissions[i] = missionList.get(i);
-      final int finalI = i;
-      if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
-          && playerMissions[i].getTargetIds().stream().anyMatch(id -> id == finalI)) {
-        playerMissions[i] = RiskMission.FALLBACK;
+    Optional<RiskMission> fallbackOptional = missionList.stream()
+        .filter(m -> m.getRiskMissionType() == RiskMissionType.OCCUPY_TERRITORY).findFirst();
+
+    if (fallbackOptional.isEmpty()) {
+      System.err.println("Warning: No fallback (any OCCUPY_TERRITORY) mission could be determined."
+          + " Mission-dealing could take a while");
+
+      if (missionList.size() < playerMissions.length) {
+        throw new IllegalArgumentException("More players then missions");
+      }
+    } else {
+      for (int i = missionList.size() - 1; i < playerMissions.length; i++) {
+        missionList.add(fallbackOptional.get());
       }
     }
+
+    boolean playerLiberateThemselves;
+    do {
+      playerLiberateThemselves = false;
+      Collections.shuffle(missionList);
+      for (int i = 0; i < playerMissions.length; i++) {
+        RiskMission riskMission = missionList.get(i);
+        playerMissions[i] = riskMission;
+        playerLiberateThemselves = playerLiberateThemselves
+            || (riskMission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
+            && riskMission.getTargetIds().contains(i));
+      }
+    } while (fallbackOptional.isEmpty() && playerLiberateThemselves);
+
+    if (fallbackOptional.isPresent() && playerLiberateThemselves) {
+      for (int i = 0; i < playerMissions.length; i++) {
+        if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
+            && playerMissions[i].getTargetIds().contains(i)) {
+          playerMissions[i] = fallbackOptional.get();
+        }
+      }
+    }
+
   }
 
 }
