@@ -306,4 +306,11 @@ public class RiskTerritoryConfiguration {
     this.connects = connects;
   }
 
+  public int getContinentId() {
+    return continentId;
+  }
+
+  public void setContinentId(int continentId) {
+    this.continentId = continentId;
+  }
 }

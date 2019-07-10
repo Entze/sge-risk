@@ -28,16 +28,19 @@ reinforcementAtLeast: 3
 reinforcementThreshold: 3
 territories: !!set
   ? cardType: 2
-    connects: !!set {0: null, 1: null}
+    connects: !!set {1: null, 0: null}
+    continentId: 0
     territoryId: 2
     : null
-  ? cardType: 0
-    connects: !!set {1: null, 2: null}
-    territoryId: 0
-    : null
   ? cardType: 1
-    connects: !!set {2: null, 0: null}
+    connects: !!set {0: null, 2: null}
+    continentId: 0
     territoryId: 1
+    : null
+  ? cardType: 0
+    connects: !!set {2: null, 1: null}
+    continentId: 0
+    territoryId: 0
     : null
 withCards: true
 withMissions: true
