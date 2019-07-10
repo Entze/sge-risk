@@ -5,18 +5,25 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.pholser.junit.quickcheck.From;
+import com.pholser.junit.quickcheck.Property;
+import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import dev.entze.sge.game.risk.board.RiskBoard;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
+import dev.entze.sge.game.risk.generators.RiskActionGenerator;
+import dev.entze.sge.game.risk.generators.RiskGenerator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.yaml.snakeyaml.Yaml;
 
+@RunWith(JUnitQuickcheck.class)
 public class RiskTest {
 
   private final String simpleConfigYaml =
@@ -64,6 +71,12 @@ public class RiskTest {
           + "withCards: true\n"
           + "withMissions: true";
 
+  private Risk simpleRisk = new Risk(simpleConfigYaml, 2);
+  private Risk defaultRisk2 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 2);
+  private Risk defaultRisk3 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 3);
+  private Risk defaultRisk4 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 4);
+  private Risk defaultRisk5 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 5);
+  private Risk defaultRisk6 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 6);
 
   @Test
   public void test_yaml_dump_0() {
@@ -746,4 +759,55 @@ public class RiskTest {
 
   }
 
+  @Property
+  public void prop_gameOverEquivPossibleActionsEmpty(@From(RiskGenerator.class) Risk risk) {
+    assertEquals(
+        risk.toTextRepresentation() + "\n#############################\n" + risk.getActionRecords()
+            .toString(),
+        risk.isGameOver(),
+        risk.getPossibleActions().isEmpty());
+  }
+
+
+  @Property
+  public void prop_onlyPossibleActionsAreValid(@From(RiskGenerator.class) Risk risk,
+      @From(RiskActionGenerator.class) RiskAction action) {
+
+    assertTrue(!risk.isValidAction(action) || risk.getPossibleActions().contains(action));
+
+  }
+
+  @Property
+  public void prop_doingValidActionDoesNotThrowException(@From(RiskGenerator.class) Risk risk) {
+    for (RiskAction possibleAction : risk.getPossibleActions()) {
+      try {
+        risk.doAction(possibleAction);
+      } catch (Exception e) {
+        fail();
+      }
+    }
+  }
+
+  @Property
+  public void prop_anyValidCanonicalActionIsAlsoValidNonCanonicalAction(
+      @From(RiskGenerator.class) /*TODO: Only generate canonical games*/ Risk risk,
+      @From(RiskActionGenerator.class) RiskAction action) {
+    assertEquals(risk.isValidAction(action), risk.getGame().isValidAction(action));
+  }
+
+  @Property
+  public void prop_allPossibleCanonicalActionsAreAlsoPossibleNonCanonicalActions(
+      @From(RiskGenerator.class) Risk risk) {
+
+    assertTrue(risk.getGame().getPossibleActions().containsAll(risk.getPossibleActions()));
+
+  }
+
+  @Property
+  public void prop_allPossibleActionsAreValid(@From(RiskGenerator.class) Risk risk) {
+    Set<RiskAction> possibleActions = risk.getPossibleActions();
+    for (RiskAction action : possibleActions) {
+      assertTrue(risk.isValidAction(action));
+    }
+  }
 }

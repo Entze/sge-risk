@@ -1,5 +1,9 @@
 package dev.entze.sge.game.risk;
 
+import com.pholser.junit.quickcheck.random.SourceOfRandomness;
+import java.util.ArrayList;
+import java.util.Collection;
+
 public class Util {
 
   public static double transformGaussian(double Z, double n, double sigma) {
@@ -28,6 +32,17 @@ public class Util {
     double sigma = 1D / 3D * halfDiff;
     double X = transformGaussian(gaussian, n, sigma);
     return (int) Math.max(min, Math.min(max, X));
+  }
+
+  public static Collection<Integer> ints(SourceOfRandomness random, int max) {
+    int numberOfInts = Math.abs(Util
+        .gaussianInt(random.nextGaussian(), -max, max));
+
+    ArrayList<Integer> collection = new ArrayList<>(numberOfInts);
+    for (int i = 0; i < numberOfInts; i++) {
+      collection.add(random.nextInt());
+    }
+    return collection;
   }
 
 }
