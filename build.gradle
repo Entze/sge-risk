@@ -19,6 +19,8 @@ dependencies {
     compile fileTree(dir: 'lib', include: ['*.jar'])
     testCompile fileTree(dir: 'lib', include: ['*.jar'])
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile 'com.pholser:junit-quickcheck-core:0.9'
+    testCompile 'com.pholser:junit-quickcheck-generators:0.9'
 }
 
 jar {

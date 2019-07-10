@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class RiskTerritoryConfiguration {
@@ -274,8 +273,8 @@ public class RiskTerritoryConfiguration {
 
   public static Set<Integer> getConnectsSet(RiskTerritoryConfiguration... configurations) {
     return Arrays.stream(configurations)
-        .map(configuration -> configuration.continentId)
-        .collect(Collectors.toCollection(TreeSet::new));
+        .map(configuration -> configuration.territoryId)
+        .collect(Collectors.toSet());
   }
 
   public RiskTerritory getTerritory() {

@@ -67,12 +67,10 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public boolean isGameOver() {
-    if (!isInitialSelect() && board.getTerritories().values().stream().mapToInt(
+    // all territories belong to one player
+    return !isInitialSelect() && board.getTerritories().values().stream().mapToInt(
         RiskTerritory::getOccupantPlayerId).distinct().count()
-        == 1L) { // all territories belong to one player
-      return true;
-    }
-    return false;
+        == 1L;
   }
 
   @Override
@@ -226,6 +224,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public boolean isValidAction(RiskAction riskAction) {
+    if (riskAction == null) {
+      return false;
+    }
     if (currentPlayerId < 0) {
       if (board.isAttack()) {
         int armiesFought = Math.min(board.getNrOfAttackerDice(), board.getNrOfDefenderDice());
@@ -267,6 +268,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public Game<RiskAction, RiskBoard> doAction(RiskAction riskAction) {
+    if (riskAction == null) {
+      throw new IllegalArgumentException("Found null");
+    }
     Risk next = null;
     if (currentPlayerId < 0) {
       if (board.isAttack()) {
