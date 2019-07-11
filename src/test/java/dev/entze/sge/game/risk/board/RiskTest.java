@@ -1,4 +1,4 @@
-package dev.entze.sge.game.risk;
+package dev.entze.sge.game.risk.board;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -8,7 +8,6 @@ import static org.junit.Assert.fail;
 import com.pholser.junit.quickcheck.From;
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
-import dev.entze.sge.game.risk.board.RiskBoard;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
@@ -117,6 +116,73 @@ public class RiskTest {
         + "+-----+");
 
     System.out.println(yaml.dump(riskConfiguration));
+
+  }
+
+
+  @Test
+  public void test_yaml_load_0() {
+    Yaml yaml = RiskConfiguration.getYaml();
+
+    String config = yaml.dump(RiskConfiguration.RISK_DEFAULT_CONFIG);
+
+    assertEquals(RiskConfiguration.RISK_DEFAULT_CONFIG, yaml.load(config));
+
+  }
+
+  @Test
+  public void test_yaml_load_1() {
+    Yaml yaml = RiskConfiguration.getYaml();
+
+    String config = "!!dev.entze.sge.game.risk.configuration.RiskConfiguration\n"
+        + "cardTypesWithoutJoker: 3\n"
+        + "chooseInitialTerritories: false\n"
+        + "continents: !!set\n"
+        + "  ? {continentId: 0, troopBonus: 1}\n"
+        + "  : null\n"
+        + "fortifyOnlyFromSingleTerritory: true\n"
+        + "fortifyOnlyWithNonFightingArmies: false\n"
+        + "initialTroops: [3]\n"
+        + "map: |-\n"
+        + "  +-----+\n"
+        + "  |2[0]2|\n"
+        + "  +-----+\n"
+        + "  7\\5+-----+\n"
+        + "  8\\____|2[1]2|\n"
+        + "  8/4+-----+\n"
+        + "  7/\n"
+        + "  +-----+\n"
+        + "  |2[2]2|\n"
+        + "  +-----+\n"
+        + "maxAttackerDice: 3\n"
+        + "maxDefenderDice: 2\n"
+        + "maxNumberOfPlayers: 2\n"
+        + "missions: !!set {}\n"
+        + "numberOfJokers: 2\n"
+        + "occupyOnlyWithAttackingArmies: false\n"
+        + "reinforcementAtLeast: 3\n"
+        + "reinforcementThreshold: 3\n"
+        + "territories: !!set\n"
+        + "  ? cardType: 0\n"
+        + "    connects: !!set {1: null, 2: null}\n"
+        + "    continentId: 0\n"
+        + "    territoryId: 0\n"
+        + "  : null\n"
+        + "  ? cardType: 2\n"
+        + "    connects: !!set {0: null, 1: null}\n"
+        + "    continentId: 0\n"
+        + "    territoryId: 2\n"
+        + "  : null\n"
+        + "  ? cardType: 1\n"
+        + "    connects: !!set {2: null, 0: null}\n"
+        + "    continentId: 0\n"
+        + "    territoryId: 1\n"
+        + "  : null\n"
+        + "withCards: true\n"
+        + "withMissions: true";
+
+    RiskConfiguration riskConfiguration = yaml.load(config);
+
 
   }
 
@@ -739,6 +805,49 @@ public class RiskTest {
 
   }
 
+  @Test
+  public void test_game_doAction_fortify_1() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    config.setFortifyOnlyFromSingleTerritory(true);
+    config.setFortifyOnlyWithNonFightingArmies(false);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+
+    risk = (Risk) risk.doAction(RiskAction.occupy(2));
+
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+
+    assertEquals(1, risk.getCurrentPlayer());
+
+    assertEquals(
+        Set.of(RiskAction.endPhase(), RiskAction.fortify(0, 1, 1),
+            RiskAction.fortify(1, 0, 1),
+            RiskAction.fortify(1, 0, 2),
+            RiskAction.fortify(1, 0, 3)
+        ),
+        risk.getPossibleActions());
+
+    assertTrue(risk.isValidAction(RiskAction.fortify(1, 0, 1)));
+    risk = (Risk) risk.doAction(RiskAction.fortify(1, 0, 1));
+
+    assertEquals(3, risk.getBoard().getTerritoryTroops(0));
+    assertEquals(3, risk.getBoard().getTerritoryTroops(1));
+
+    assertEquals(0, risk.getCurrentPlayer());
+
+  }
 
   @Test
   public void test_game_getGame_independent() {
@@ -759,7 +868,17 @@ public class RiskTest {
 
   }
 
-  @Property
+  @Test
+  public void test_constructor_zero() {
+    new Risk();
+  }
+
+  @Test
+  public void test_constructor_one() {
+    new Risk(2);
+  }
+
+  @Property(trials = 64)
   public void prop_gameOverEquivPossibleActionsEmpty(@From(RiskGenerator.class) Risk risk) {
     assertEquals(
         risk.toTextRepresentation() + "\n#############################\n" + risk.getActionRecords()
@@ -769,7 +888,7 @@ public class RiskTest {
   }
 
 
-  @Property
+  @Property(trials = 64)
   public void prop_onlyPossibleActionsAreValid(@From(RiskGenerator.class) Risk risk,
       @From(RiskActionGenerator.class) RiskAction action) {
 
@@ -777,7 +896,7 @@ public class RiskTest {
 
   }
 
-  @Property
+  @Property(trials = 64)
   public void prop_doingValidActionDoesNotThrowException(@From(RiskGenerator.class) Risk risk) {
     for (RiskAction possibleAction : risk.getPossibleActions()) {
       try {
@@ -788,14 +907,14 @@ public class RiskTest {
     }
   }
 
-  @Property
+  @Property(trials = 64)
   public void prop_anyValidCanonicalActionIsAlsoValidNonCanonicalAction(
       @From(RiskGenerator.class) /*TODO: Only generate canonical games*/ Risk risk,
       @From(RiskActionGenerator.class) RiskAction action) {
     assertEquals(risk.isValidAction(action), risk.getGame().isValidAction(action));
   }
 
-  @Property
+  @Property(trials = 64)
   public void prop_allPossibleCanonicalActionsAreAlsoPossibleNonCanonicalActions(
       @From(RiskGenerator.class) Risk risk) {
 
@@ -803,7 +922,7 @@ public class RiskTest {
 
   }
 
-  @Property
+  @Property(trials = 64)
   public void prop_allPossibleActionsAreValid(@From(RiskGenerator.class) Risk risk) {
     Set<RiskAction> possibleActions = risk.getPossibleActions();
     for (RiskAction action : possibleActions) {

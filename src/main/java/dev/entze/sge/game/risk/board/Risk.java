@@ -1,10 +1,8 @@
-package dev.entze.sge.game.risk;
+package dev.entze.sge.game.risk.board;
 
 import dev.entze.sge.game.ActionRecord;
 import dev.entze.sge.game.Dice;
 import dev.entze.sge.game.Game;
-import dev.entze.sge.game.risk.board.RiskBoard;
-import dev.entze.sge.game.risk.board.RiskTerritory;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.util.PriestLogic;
 import java.util.ArrayList;
@@ -32,9 +30,17 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   private final Dice attackerDice;
   private final Dice defenderDice;
 
+  public Risk() {
+    this(RiskConfiguration.RISK_DEFAULT_CONFIG, 2);
+  }
+
+  public Risk(int numberOfPlayers) {
+    this(RiskConfiguration.RISK_DEFAULT_CONFIG, numberOfPlayers);
+  }
 
   public Risk(String yaml, int numberOfPlayers) {
-    this((RiskConfiguration) RiskConfiguration.getYaml().load(yaml), numberOfPlayers);
+    this(yaml == null || yaml.isEmpty() ? RiskConfiguration.RISK_DEFAULT_CONFIG
+        : (RiskConfiguration) RiskConfiguration.getYaml().load(yaml), numberOfPlayers);
   }
 
   public Risk(RiskConfiguration configuration, int numberOfPlayers) {
@@ -100,6 +106,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public Set<RiskAction> getPossibleActions() {
+    if (isGameOver()) {
+      return Collections.emptySet();
+    }
     if (currentPlayerId < 0) {
       if (board.isAttack()) {
         return casualtiesGPA();
@@ -166,7 +175,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private Set<RiskAction> initialReinforceGPA() {
-    return board.occupiedTerritoriesByPlayer(this.currentPlayerId).stream()
+    return board.getTerritoriesOccupiedByPlayer(this.currentPlayerId).stream()
         .map(id -> RiskAction.reinforce(id, 1)).collect(Collectors.toSet());
   }
 
@@ -188,7 +197,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     actions.add(RiskAction.endPhase());
 
     Set<Integer> territories = board
-        .occupiedTerritoriesByPlayerWithMoreThan1Troops(this.currentPlayerId);
+        .getTerritoriesOccupiedByPlayerWithMoreThanOneTroops(this.currentPlayerId);
     for (Integer territory : territories) {
       Set<Integer> neighbors = board.neighboringEnemyTerritories(territory);
       int maxAttack = board.getMaxAttackingTroops(territory);
@@ -216,9 +225,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Set<RiskAction> actions = new HashSet<>();
     actions.add(RiskAction.endPhase());
 
-    for (Integer src : board.occupiedTerritoriesByPlayerWithMoreThan1Troops(currentPlayerId)) {
-      for (Integer dest : board.fortifyableTerritories(src)) {
-        for (int t = 1; t <= board.mobileTroops(src); t++) {
+    for (Integer src : board.getTerritoriesOccupiedByPlayerWithMoreThanOneTroops(currentPlayerId)) {
+      for (Integer dest : board.getFortifyableTerritories(src)) {
+        for (int t = 1; t <= board.getFortifyableTroops(src); t++) {
           actions.add(RiskAction.fortify(src, dest, t));
         }
       }
@@ -241,7 +250,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public boolean isValidAction(RiskAction riskAction) {
-    if (riskAction == null) {
+    if (riskAction == null || isGameOver()) {
       return false;
     }
     if (currentPlayerId < 0) {
@@ -279,6 +288,18 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     } else if (board.isOccupyPhase()) {
       return 1 <= riskAction.troops() && riskAction.troops() <= board.getMaxOccupy();
+    } else if (board.isFortifyPhase()) {
+      int fortifyingId = riskAction.fortifyingId();
+      int fortifiedId = riskAction.fortifiedId();
+      int troops = riskAction.troops();
+
+      return board.isTerritory(fortifyingId) && board.isTerritory(fortifiedId)
+          && board.getTerritoryOccupantId(fortifyingId) == currentPlayerId
+          && board.getTerritoryOccupantId(fortifiedId) == currentPlayerId
+          && 0 < troops
+          && troops <= board.getFortifyableTroops(fortifyingId)
+          && board.canFortify(fortifyingId, fortifiedId);
+
     }
     return false;
   }
@@ -287,6 +308,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   public Game<RiskAction, RiskBoard> doAction(RiskAction riskAction) {
     if (riskAction == null) {
       throw new IllegalArgumentException("Found null");
+    }
+    if (isGameOver()) {
+      throw new IllegalArgumentException("Game is over");
     }
     Risk next = null;
     if (currentPlayerId < 0) {
@@ -304,7 +328,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     } else if (board.isOccupyPhase()) {
       next = occupyDA(riskAction);
     } else if (board.isFortifyPhase()) {
-
+      next = fortifyDA(riskAction);
     }
 
     if (next != null) {
@@ -384,15 +408,17 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private int nextPlayerId(int player) {
-    player++;
+    player = (player + 1) % getNumberOfPlayers();
     for (int n = 1; n < getNumberOfPlayers(); n++, player = (player + 1) % getNumberOfPlayers()) {
-      final int finalPlayer = player;
-      if (board.getTerritories().entrySet().stream()
-          .anyMatch(e -> e.getValue().getOccupantPlayerId() == finalPlayer)) {
+      if (board.isPlayerStillAlive(player)) {
         return player;
       }
     }
     return player;
+  }
+
+  private int nextPlayerId() {
+    return nextPlayerId(currentPlayerId);
   }
 
   private Risk reinforceDA(RiskAction riskAction) {
@@ -469,7 +495,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
       next.board.startAttack(attackingId, defendingId, troops);
     } else {
-      board.endAttackPhase();
+      next.board.endAttackPhase();
     }
 
     return next;
@@ -504,6 +530,75 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     next.board.occupy(riskAction.troops());
 
     return next;
+  }
+
+  private Risk fortifyDA(RiskAction riskAction) {
+    int fortifyingId = riskAction.fortifyingId();
+    int fortifiedId = riskAction.fortifiedId();
+    int troops = riskAction.troops();
+
+    Risk next = new Risk(this);
+    if (!riskAction.isEndPhase()) {
+      {
+        StringBuilder errorMsg = new StringBuilder();
+
+        if (!board.isTerritory(fortifyingId) || !board.isTerritory(fortifiedId)) {
+          if (!board.isTerritory(fortifyingId)) {
+            errorMsg.append("FortifyingId is not assigned any territory");
+          }
+          if (!board.isTerritory(fortifiedId)) {
+            if (errorMsg.length() > 0) {
+              errorMsg.append(", ");
+            }
+            errorMsg.append("FortifiedId is not assigned any territory");
+          }
+        } else {
+          if (board.getTerritoryOccupantId(fortifyingId) != currentPlayerId) {
+            errorMsg.append("FortifyingId is not occupied by current player");
+          }
+
+          if (board.getTerritoryOccupantId(fortifiedId) != currentPlayerId) {
+            if (errorMsg.length() > 0) {
+              errorMsg.append(", ");
+            }
+            errorMsg.append("FortifiedId is not occupied by current player");
+          }
+
+          if (!(0 < troops && troops <= board.getFortifyableTroops(fortifyingId))) {
+            if (errorMsg.length() > 0) {
+              errorMsg.append(", ");
+            }
+            errorMsg.append(troops).append(" is an illegal number of troops");
+          }
+
+          if (!board.canFortify(fortifyingId, fortifiedId)) {
+            if (errorMsg.length() > 0) {
+              errorMsg.append(", ");
+            }
+            errorMsg.append("FortifyingId cannot reach FortifiedId");
+          }
+
+        }
+
+        if (errorMsg.length() > 0) {
+          throw new IllegalArgumentException(
+              errorMsg.append(", could therefore not fortify").toString());
+        }
+      }
+
+      next.board.fortify(fortifyingId, fortifiedId, troops);
+
+      if (next.board.isFortifyOnlyFromSingleTerritory()) {
+        next.endMove();
+      }
+    }
+
+    return next;
+  }
+
+  private void endMove() {
+    this.currentPlayerId = nextPlayerId();
+    this.board.endMove(this.currentPlayerId);
   }
 
   @Override

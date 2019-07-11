@@ -3,7 +3,7 @@ package dev.entze.sge.game.risk.generators;
 import com.pholser.junit.quickcheck.generator.GenerationStatus;
 import com.pholser.junit.quickcheck.generator.Generator;
 import com.pholser.junit.quickcheck.random.SourceOfRandomness;
-import dev.entze.sge.game.risk.RiskAction;
+import dev.entze.sge.game.risk.board.RiskAction;
 
 public class RiskActionGenerator extends Generator<RiskAction> {
 

@@ -319,7 +319,7 @@ public class RiskBoard {
         : -1;
   }
 
-  public void setTerritoryOccupantId(int territoryOccupantId, int playerId) {
+  private void setTerritoryOccupantId(int territoryOccupantId, int playerId) {
     if (isTerritory(territoryOccupantId)) {
       territories.get(territoryOccupantId).setOccupantPlayerId(playerId);
     }
@@ -329,7 +329,7 @@ public class RiskBoard {
     return territories.containsKey(territoryId) ? territories.get(territoryId).getTroops() : 0;
   }
 
-  public String getMap() {
+  String getMap() {
     return map;
   }
 
@@ -339,14 +339,14 @@ public class RiskBoard {
         .toMap(i -> i, i -> new RiskTerritory(territories.get(i)), (a, b) -> b));
   }
 
-  public void initialSelect(int selected, int playerId) {
+  void initialSelect(int selected, int playerId) {
     RiskTerritory territory = territories.get(selected);
     territory.setOccupantPlayerId(playerId);
     territory.setTroops(1);
     nonDeployedReinforcements[playerId]--;
   }
 
-  public void endMove(int nextPlayer) {
+  void endMove(int nextPlayer) {
     phase = RiskPhase.REINFORCEMENT;
     involvedTroopsInAttacks.clear();
     hasOccupiedCountry = false;
@@ -368,7 +368,7 @@ public class RiskBoard {
     nonDeployedReinforcements[player] += reinforcements;
   }
 
-  public boolean areReinforcementsLeft() {
+  boolean areReinforcementsLeft() {
     for (int nonDeployedReinforcement : nonDeployedReinforcements) {
       if (nonDeployedReinforcement > 0) {
         return true;
@@ -377,35 +377,35 @@ public class RiskBoard {
     return false;
   }
 
-  public int reinforcementsLeft(int player) {
+  int reinforcementsLeft(int player) {
     return nonDeployedReinforcements[player];
   }
 
-  public boolean isReinforcementPhase() {
+  boolean isReinforcementPhase() {
     return phase == RiskPhase.REINFORCEMENT;
   }
 
-  public boolean isAttackPhase() {
+  boolean isAttackPhase() {
     return phase == RiskPhase.ATTACK;
   }
 
-  public boolean isOccupyPhase() {
+  boolean isOccupyPhase() {
     return phase == RiskPhase.OCCUPY;
   }
 
-  public boolean isFortifyPhase() {
+  boolean isFortifyPhase() {
     return phase == RiskPhase.FORTIFY;
   }
 
-  public int getMaxAttackerDice() {
+  int getMaxAttackerDice() {
     return maxAttackerDice;
   }
 
-  public int getMaxDefenderDice() {
+  int getMaxDefenderDice() {
     return maxDefenderDice;
   }
 
-  public int getNrOfDefenderDice() {
+  int getNrOfDefenderDice() {
 
     if (!territories.containsKey(defendingId)) {
       return 0;
@@ -414,7 +414,7 @@ public class RiskBoard {
     return Math.min(maxDefenderDice, territories.get(defendingId).getTroops());
   }
 
-  public int getNrOfAttackerDice() {
+  int getNrOfAttackerDice() {
 
     if (!territories.containsKey(attackingId)) {
       return 0;
@@ -423,7 +423,7 @@ public class RiskBoard {
     return Math.min(maxAttackerDice, troops);
   }
 
-  public void reinforce(int player, int reinforcedId, int troops) {
+  void reinforce(int player, int reinforcedId, int troops) {
     if (territories.containsKey(reinforcedId)) {
       RiskTerritory territory = territories.get(reinforcedId);
       territory.setTroops(territory.getTroops() + troops);
@@ -431,7 +431,7 @@ public class RiskBoard {
     }
   }
 
-  public void endReinforcementPhase() {
+  void endReinforcementPhase() {
     phase = RiskPhase.ATTACK;
   }
 
@@ -451,12 +451,12 @@ public class RiskBoard {
         .filter(id -> getTerritoryOccupantId(id) == self).collect(Collectors.toSet());
   }
 
-  public int mobileTroops(int territoryId) {
+  public int getMobileTroops(int territoryId) {
     return getTerritoryTroops(territoryId) - 1;
   }
 
   public int getMaxAttackingTroops(int attackingId) {
-    int troops = mobileTroops(attackingId);
+    int troops = getMobileTroops(attackingId);
     if (occupyOnlyWithAttackingArmies) {
       return troops;
     }
@@ -468,39 +468,39 @@ public class RiskBoard {
     return gameBoard.containsEdge(territoryId1, territoryId2);
   }
 
-  public Set<Integer> occupiedTerritoriesByPlayer(final int playerId) {
+  public Set<Integer> getTerritoriesOccupiedByPlayer(final int playerId) {
     return territories.entrySet().stream()
         .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId).map(Entry::getKey)
         .collect(Collectors.toSet());
   }
 
-  public int nrOfTerritoriesOccupiedByPlayer(final int playerId) {
+  public int getNrOfTerritoriesOccupiedByPlayer(final int playerId) {
     return Math.toIntExact(territories.entrySet().stream()
         .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId).count());
   }
 
-  public boolean playerStillAlive(int playerId) {
-    return nrOfTerritoriesOccupiedByPlayer(playerId) > 0;
+  public boolean isPlayerStillAlive(final int playerId) {
+    return territories.values().stream().anyMatch(t -> t.getOccupantPlayerId() == playerId);
   }
 
-  public Set<Integer> occupiedTerritoriesByPlayerWithMoreThan1Troops(final int playerId) {
+  public Set<Integer> getTerritoriesOccupiedByPlayerWithMoreThanOneTroops(final int playerId) {
     return territories.entrySet().stream()
         .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId
             && entry.getValue().getTroops() > 1).map(Entry::getKey)
         .collect(Collectors.toSet());
   }
 
-  public void startAttack(int attackingId, int defendingId, int troops) {
+  void startAttack(int attackingId, int defendingId, int troops) {
     this.attackingId = attackingId;
     this.defendingId = defendingId;
     this.troops = troops;
   }
 
-  public boolean isAttack() {
+  boolean isAttack() {
     return phase == RiskPhase.ATTACK && attackingId >= 0 && defendingId >= 0 && troops > 0;
   }
 
-  public int endAttack(int attackerCasualties, int defendingCasualties) {
+  int endAttack(int attackerCasualties, int defendingCasualties) {
     int attackerId = getTerritoryOccupantId(attackingId);
     if (isAttack()) {
       territories.get(attackingId).removeTroops(attackerCasualties);
@@ -526,7 +526,7 @@ public class RiskBoard {
     return attackerId;
   }
 
-  public void endAttackPhase() {
+  void endAttackPhase() {
     phase = RiskPhase.FORTIFY;
     attackingId = -1;
     defendingId = -1;
@@ -538,10 +538,10 @@ public class RiskBoard {
       return troops;
     }
 
-    return getTerritoryTroops(attackingId) - 1;
+    return getMobileTroops(attackingId);
   }
 
-  public void occupy(int troops) {
+  void occupy(int troops) {
     territories.get(attackingId).removeTroops(troops);
     territories.get(defendingId).addTroops(troops);
     involvedTroopsInAttacks
@@ -562,7 +562,7 @@ public class RiskBoard {
     phase = RiskPhase.ATTACK;
   }
 
-  public PriestLogic missionFulfilled(int player) {
+  PriestLogic missionFulfilled(int player) {
     if (playerMissions == null) {
       return PriestLogic.FALSE;
     }
@@ -585,10 +585,10 @@ public class RiskBoard {
     return PriestLogic.FALSE;
   }
 
-  public PriestLogic missionFulfilled(RiskMission mission) {
+  private PriestLogic missionFulfilled(RiskMission mission) {
     if (mission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER) {
       return PriestLogic
-          .fromBoolean(mission.getTargetIds().stream().noneMatch(this::playerStillAlive));
+          .fromBoolean(mission.getTargetIds().stream().noneMatch(this::isPlayerStillAlive));
     } else if (mission.getRiskMissionType() == RiskMissionType.CONQUER_CONTINENT) {
       return PriestLogic.fromBoolean(playerConqueredContinents().entrySet().stream()
           .anyMatch(
@@ -631,7 +631,7 @@ public class RiskBoard {
   }
 
   private boolean territoriesOccupied(int player, Collection<Integer> targetIds, int atLeast) {
-    Set<Integer> occupiedTerritories = occupiedTerritoriesByPlayer(player);
+    Set<Integer> occupiedTerritories = getTerritoriesOccupiedByPlayer(player);
 
     return occupiedTerritories.size() <= targetIds.size() // enough territories occupied
         && occupiedTerritories.stream().allMatch(
@@ -639,18 +639,6 @@ public class RiskBoard {
         // all territories occupied with at least required amount
         && targetIds.stream().filter(i -> i >= 0)
         .allMatch(occupiedTerritories::contains); // all required territories occupied
-  }
-
-  public Set<Integer> fortifyableTerritories(int territoryId) {
-    if (fortifyOnlyFromSingleTerritory) {
-      return neighboringFriendlyTerritories(territoryId);
-    }
-
-    int player = getTerritoryOccupantId(territoryId);
-    Set<Integer> fortifyableTerritories = fortifyConnectivityInspector.get(player)
-        .connectedSetOf(territoryId);
-    fortifyableTerritories.remove(territoryId);
-    return fortifyableTerritories;
   }
 
   private Map<Integer, Set<Integer>> playerConqueredContinents() {
@@ -688,6 +676,44 @@ public class RiskBoard {
     }
 
     return playerConqueredContinents;
+  }
+
+  public Set<Integer> getFortifyableTerritories(int territoryId) {
+    if (fortifyOnlyFromSingleTerritory) {
+      return neighboringFriendlyTerritories(territoryId);
+    }
+
+    int player = getTerritoryOccupantId(territoryId);
+    Set<Integer> fortifyableTerritories = fortifyConnectivityInspector.get(player)
+        .connectedSetOf(territoryId);
+    fortifyableTerritories.remove(territoryId);
+    return fortifyableTerritories;
+  }
+
+  public boolean canFortify(int fortifyingId, int fortifiedId) {
+    int occupant = getTerritoryOccupantId(fortifyingId);
+    return occupant > 0 && occupant == getTerritoryOccupantId(fortifiedId)
+        && (fortifyOnlyFromSingleTerritory || fortifyConnectivityInspector.get(occupant)
+        .pathExists(fortifyingId, fortifiedId))
+        && (!fortifyOnlyFromSingleTerritory || areNeighbors(fortifyingId, fortifiedId));
+  }
+
+  void fortify(int fortifyingId, int fortifiedId, int troops) {
+    territories.get(fortifyingId).removeTroops(troops);
+    territories.get(fortifiedId).addTroops(troops);
+  }
+
+  boolean isFortifyOnlyFromSingleTerritory() {
+    return fortifyOnlyFromSingleTerritory;
+  }
+
+  public int getFortifyableTroops(int territoryId) {
+    int troops = getTerritoryTroops(territoryId);
+    if (fortifyOnlyWithNonFightingArmies) {
+      troops -= involvedTroopsInAttacks.get(territoryId);
+    }
+
+    return Math.min(troops, getMobileTroops(territoryId));
   }
 
   private enum RiskPhase {

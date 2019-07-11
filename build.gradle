@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'idea'
+    id 'com.github.johnrengelman.shadow' version '4.0.2'
 }
 
 group 'dev.entze'
@@ -26,7 +27,7 @@ dependencies {
 jar {
     manifest {
         attributes 'Sge-Type': 'game'
-        attributes 'Game-Class': 'dev.entze.sge.game.risk.Risk'
+        attributes 'Game-Class': 'dev.entze.sge.game.risk.board.Risk'
     }
 }
 
