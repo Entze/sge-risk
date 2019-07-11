@@ -5,8 +5,8 @@ import com.pholser.junit.quickcheck.generator.Generator;
 import com.pholser.junit.quickcheck.random.SourceOfRandomness;
 import dev.entze.sge.game.risk.Risk;
 import dev.entze.sge.game.risk.RiskAction;
+import dev.entze.sge.game.risk.Util;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
-import java.util.Arrays;
 import java.util.Set;
 
 public class RiskGenerator extends Generator<Risk> {
@@ -18,34 +18,36 @@ public class RiskGenerator extends Generator<Risk> {
   @Override
   public Risk generate(SourceOfRandomness random, GenerationStatus status) {
 
-    Set<RiskConfiguration> configs = Set
-        .of(new RiskConfigurationGenerator().generate(random, status),
-            RiskConfiguration.RISK_DEFAULT_CONFIG);
-    RiskConfiguration config = random.choose(configs);
+    RiskConfiguration config = RiskConfiguration.RISK_DEFAULT_CONFIG;
+    if (random.nextBoolean()) {
+      config = new RiskConfigurationGenerator().generate(random, status);
+    }
+
+    int maxMult = 0;
+    do {
+      maxMult++;
+    } while (random.nextBoolean());
+
+    int playMoves = Util.gaussianInt(random.nextGaussian(), 0, 16 * maxMult);
 
     Risk risk = new Risk(config, random.nextInt(2, config.getMaxNumberOfPlayers()));
-    Risk[] playthrough = new Risk[32];
+
     if (random.nextInt(0, 128) == 64) {
       risk = (Risk) risk.getGame();
     }
 
-    int counter = 0;
-    Arrays.fill(playthrough, risk);
-
-    while (!risk.isGameOver() && ((counter = (counter + 1) % playthrough.length) != 0 || random
-        .nextBoolean())) {
-      Set<RiskAction> actions = risk.getPossibleActions();
-      if (actions.isEmpty()) {
-        break;
+    for (int i = 0; i < playMoves && !risk.isGameOver(); i++) {
+      Set<RiskAction> possibleActions = risk.getPossibleActions();
+      if (possibleActions.isEmpty()) {
+        return risk;
       }
-      risk = (Risk) risk.doAction(random.choose(actions));
+      risk = (Risk) risk.doAction(random.choose(possibleActions));
       if (random.nextInt(0, 128) == 64) {
         risk = (Risk) risk.getGame();
       }
-      playthrough[counter] = risk;
     }
 
-    return random.choose(playthrough);
+    return risk;
 
   }
 }

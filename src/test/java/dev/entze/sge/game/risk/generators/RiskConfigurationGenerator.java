@@ -25,15 +25,15 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
   public RiskConfiguration generate(SourceOfRandomness random, GenerationStatus status) {
     RiskConfiguration riskConfiguration = new RiskConfiguration();
 
-    riskConfiguration.setMaxNumberOfPlayers(random.nextInt(2, 128));
-    riskConfiguration.setMaxAttackerDice(random.nextInt(1, 128));
-    riskConfiguration.setMaxDefenderDice(random.nextInt(1, 128));
+    riskConfiguration.setMaxNumberOfPlayers(random.nextInt(2, 8));
+    riskConfiguration.setMaxAttackerDice(random.nextInt(1, 8));
+    riskConfiguration.setMaxDefenderDice(random.nextInt(1, 8));
     riskConfiguration.setWithCards(random.nextBoolean());
-    riskConfiguration.setCardTypesWithoutJoker(random.nextInt(2, 128));
-    riskConfiguration.setNumberOfJokers(random.nextInt(2, 128));
+    riskConfiguration.setCardTypesWithoutJoker(random.nextInt(2, 8));
+    riskConfiguration.setNumberOfJokers(random.nextInt(2, 8));
     riskConfiguration.setChooseInitialTerritories(random.nextBoolean());
-    riskConfiguration.setReinforcementAtLeast(random.nextInt(2, 128));
-    riskConfiguration.setReinforcementThreshold(random.nextInt(2, 128));
+    riskConfiguration.setReinforcementAtLeast(random.nextInt(2, 8));
+    riskConfiguration.setReinforcementThreshold(random.nextInt(2, 8));
     riskConfiguration.setOccupyOnlyWithAttackingArmies(random.nextBoolean());
     riskConfiguration.setFortifyOnlyFromSingleTerritory(random.nextBoolean());
     riskConfiguration.setFortifyOnlyWithNonFightingArmies(random.nextBoolean());
@@ -41,7 +41,7 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
 
     Set<RiskTerritoryConfiguration> territories = new HashSet<>();
     {
-      int numberOfTerritories = Util.gaussianInt(random.nextGaussian(), 2, 128);
+      int numberOfTerritories = Util.gaussianInt(random.nextGaussian(), 2, 64);
       RiskTerritoryConfigurationGenerator generator = new RiskTerritoryConfigurationGenerator();
       for (int i = 0; i < numberOfTerritories; i++) {
         territories.add(generator.generate(random, status));
@@ -61,6 +61,10 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
       int numberOfMissions = riskConfiguration.getMaxNumberOfPlayers();
       RiskMissionConfigurationGenerator generator = new RiskMissionConfigurationGenerator();
       for (int i = 0; i < numberOfMissions; i++) {
+        missions.add(generator.generate(random, status));
+      }
+      while (missions.stream()
+          .noneMatch(m -> m.getMissionType() == RiskMissionType.OCCUPY_TERRITORY)) {
         missions.add(generator.generate(random, status));
       }
     }

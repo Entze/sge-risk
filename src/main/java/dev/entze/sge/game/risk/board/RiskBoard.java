@@ -265,6 +265,9 @@ public class RiskBoard {
         int dst = this.gameBoard.getEdgeTarget(edge);
         int occupant;
         if ((occupant = getTerritoryOccupantId(src)) == getTerritoryOccupantId(dst)) {
+          if (occupant < 0) {
+            break;
+          }
           this.fortifyConnectivityGraph.get(occupant).addEdge(src, dst);
         }
       }

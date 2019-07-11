@@ -1,6 +1,7 @@
 package dev.entze.sge.game.risk;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
@@ -27,5 +28,12 @@ public class GaussianTransform {
 
   }
 
+  @Property
+  public void prop_gaussianIntMinMax(double d, int a, int b) {
+    int min = Math.min(a, b);
+    int max = Math.max(a, b);
+    int r = Util.gaussianInt(d, a, b);
+    assertTrue(min <= r && r <= max);
+  }
 
 }
