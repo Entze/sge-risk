@@ -114,6 +114,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       return attackGPA();
     } else if (board.isOccupyPhase()) {
       return occupyGPA();
+    } else if (board.isFortifyPhase()) {
+      return fortifyGPA();
     }
 
     return Collections.emptySet();
@@ -208,6 +210,21 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   private Set<RiskAction> occupyGPA() {
     return IntStream.rangeClosed(1, board.getMaxOccupy()).mapToObj(RiskAction::occupy).collect(
         Collectors.toSet());
+  }
+
+  private Set<RiskAction> fortifyGPA() {
+    Set<RiskAction> actions = new HashSet<>();
+    actions.add(RiskAction.endPhase());
+
+    for (Integer src : board.occupiedTerritoriesByPlayerWithMoreThan1Troops(currentPlayerId)) {
+      for (Integer dest : board.fortifyableTerritories(src)) {
+        for (int t = 1; t <= board.mobileTroops(src); t++) {
+          actions.add(RiskAction.fortify(src, dest, t));
+        }
+      }
+    }
+
+    return actions;
   }
 
   private static Set<RiskAction> possibleCasualties(final int attackerDice,
@@ -369,13 +386,12 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   private int nextPlayerId(int player) {
     player++;
     for (int n = 1; n < getNumberOfPlayers(); n++, player = (player + 1) % getNumberOfPlayers()) {
-      for (Integer id : board.getTerritoryIds()) {
-        if (board.getTerritoryOccupantId(id) == player) {
-          return player;
-        }
+      final int finalPlayer = player;
+      if (board.getTerritories().entrySet().stream()
+          .anyMatch(e -> e.getValue().getOccupantPlayerId() == finalPlayer)) {
+        return player;
       }
     }
-
     return player;
   }
 

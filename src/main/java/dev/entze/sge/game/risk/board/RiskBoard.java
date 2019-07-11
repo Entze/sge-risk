@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
+import org.jgrapht.alg.connectivity.ConnectivityInspector;
+import org.jgrapht.event.GraphEdgeChangeEvent;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
@@ -48,6 +50,10 @@ public class RiskBoard {
   //board
   private final Graph<Integer, DefaultEdge> gameBoard;
   private final Map<Integer, RiskTerritory> territories;
+  private final Map<Integer, Graph<Integer, DefaultEdge>> fortifyConnectivityGraph;
+  private final Map<Integer, ConnectivityInspector<Integer, DefaultEdge>> fortifyConnectivityInspector;
+
+
   private final Deque<RiskCard> deckOfCards;
   private final Set<RiskMission> allMissions;
   private final RiskMission[] playerMissions;
@@ -96,8 +102,21 @@ public class RiskBoard {
             RiskTerritoryConfiguration::getTerritory, (a, b) -> b));
 
     gameBoard = new SimpleGraph<>(DefaultEdge.class);
+    if (fortifyOnlyFromSingleTerritory) {
+      fortifyConnectivityGraph = null;
+    } else {
+      fortifyConnectivityGraph = new HashMap<>();
+      for (int p = 0; p < numberOfPlayers; p++) {
+        fortifyConnectivityGraph.put(p, new SimpleGraph<>(DefaultEdge.class));
+      }
+    }
     for (RiskTerritoryConfiguration territoryConfiguration : territoriesConfiguration) {
       gameBoard.addVertex(territoryConfiguration.getTerritoryId());
+      if (!fortifyOnlyFromSingleTerritory) {
+        for (int p = 0; p < numberOfPlayers; p++) {
+          fortifyConnectivityGraph.get(p).addVertex(territoryConfiguration.getTerritoryId());
+        }
+      }
     }
     for (RiskTerritoryConfiguration territoryConfiguration : territoriesConfiguration) {
       for (Integer connect : territoryConfiguration.getConnects()) {
@@ -147,6 +166,28 @@ public class RiskBoard {
           nonDeployedReinforcements[p]--;
         }
       }
+
+      if (!fortifyOnlyFromSingleTerritory) {
+        for (DefaultEdge edge : gameBoard.edgeSet()) {
+          int src = gameBoard.getEdgeSource(edge);
+          int dst = gameBoard.getEdgeTarget(edge);
+          int occupant;
+          if ((occupant = getTerritoryOccupantId(src)) == getTerritoryOccupantId(dst)) {
+            fortifyConnectivityGraph.get(occupant).addEdge(src, dst);
+          }
+        }
+      }
+    }
+
+    if (fortifyOnlyFromSingleTerritory) {
+      fortifyConnectivityInspector = null;
+    } else {
+      fortifyConnectivityInspector = new HashMap<>();
+
+      for (int p = 0; p < numberOfPlayers; p++) {
+        fortifyConnectivityInspector
+            .put(p, new ConnectivityInspector<>(fortifyConnectivityGraph.get(p)));
+      }
     }
 
     involvedTroopsInAttacks = new HashMap<>();
@@ -167,7 +208,8 @@ public class RiskBoard {
         riskBoard.reinforcementAtLeast, riskBoard.reinforcementThreshold,
         riskBoard.occupyOnlyWithAttackingArmies, riskBoard.fortifyOnlyFromSingleTerritory,
         riskBoard.fortifyOnlyWithNonFightingArmies, riskBoard.withMissions,
-        riskBoard.gameBoard, riskBoard.territories, riskBoard.deckOfCards, riskBoard.allMissions,
+        riskBoard.gameBoard, riskBoard.territories, riskBoard.fortifyConnectivityGraph,
+        riskBoard.fortifyConnectivityInspector, riskBoard.deckOfCards, riskBoard.allMissions,
         riskBoard.playerMissions,
         riskBoard.playerCards,
         riskBoard.continents, riskBoard.nonDeployedReinforcements,
@@ -176,13 +218,17 @@ public class RiskBoard {
         riskBoard.map);
   }
 
-  public RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice, boolean withCards,
+  private RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice,
+      boolean withCards,
       int cardTypesWithoutJoker, int reinforcementAtLeast,
       int reinforcementThreshold, boolean occupyOnlyWithAttackingArmies,
       boolean fortifyOnlyFromSingleTerritory, boolean fortifyOnlyWithNonFightingArmies,
       boolean withMissions,
       Graph<Integer, DefaultEdge> gameBoard, Map<Integer, RiskTerritory> territories,
-      Collection<RiskCard> deckOfCards, Set<RiskMission> allMissions, RiskMission[] playerMissions,
+      Map<Integer, Graph<Integer, DefaultEdge>> fortifyConnectivityGraph,
+      Map<Integer, ConnectivityInspector<Integer, DefaultEdge>> fortifyConnectivityInspector,
+      Collection<RiskCard> deckOfCards, Set<RiskMission> allMissions,
+      RiskMission[] playerMissions,
       RiskCard[][] playerCards,
       Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements,
       Map<Integer, Integer> involvedTroopsInAttacks, int attackingId,
@@ -201,6 +247,38 @@ public class RiskBoard {
     this.withMissions = withMissions;
     this.gameBoard = gameBoard;
     this.territories = Collections.unmodifiableMap(copyTerritories(territories));
+    if (fortifyOnlyFromSingleTerritory) {
+      this.fortifyConnectivityGraph = fortifyConnectivityGraph;
+      this.fortifyConnectivityInspector = fortifyConnectivityInspector;
+    } else {
+      this.fortifyConnectivityGraph = new HashMap<>(fortifyConnectivityGraph.size() + 1, 1.00f);
+      for (int p = 0; p < numberOfPlayers; p++) {
+        this.fortifyConnectivityGraph.put(p, new SimpleGraph<>(DefaultEdge.class));
+      }
+      for (Integer vertex : gameBoard.vertexSet()) {
+        for (int p = 0; p < numberOfPlayers; p++) {
+          this.fortifyConnectivityGraph.get(p).addVertex(vertex);
+        }
+      }
+      for (DefaultEdge edge : this.gameBoard.edgeSet()) {
+        int src = this.gameBoard.getEdgeSource(edge);
+        int dst = this.gameBoard.getEdgeTarget(edge);
+        int occupant;
+        if ((occupant = getTerritoryOccupantId(src)) == getTerritoryOccupantId(dst)) {
+          this.fortifyConnectivityGraph.get(occupant).addEdge(src, dst);
+        }
+      }
+
+      this.fortifyConnectivityInspector = new HashMap<>(this.fortifyConnectivityGraph.size() + 1,
+          1.00f);
+      for (Entry<Integer, Graph<Integer, DefaultEdge>> entry : fortifyConnectivityGraph
+          .entrySet()) {
+        this.fortifyConnectivityInspector
+            .put(entry.getKey(), new ConnectivityInspector<>(entry.getValue()));
+      }
+
+    }
+
     this.deckOfCards = deckOfCards != null ? new ArrayDeque<>(deckOfCards) : null;
     this.allMissions = allMissions;
     this.playerMissions = playerMissions != null ? playerMissions.clone() : null;
@@ -233,7 +311,8 @@ public class RiskBoard {
   }
 
   public int getTerritoryOccupantId(int territoryId) {
-    return territories.containsKey(territoryId) ? territories.get(territoryId).getOccupantPlayerId()
+    return territories.containsKey(territoryId) ? territories.get(territoryId)
+        .getOccupantPlayerId()
         : -1;
   }
 
@@ -363,8 +442,18 @@ public class RiskBoard {
         .filter(id -> getTerritoryOccupantId(id) != self).collect(Collectors.toSet());
   }
 
+  public Set<Integer> neighboringFriendlyTerritories(int territoryId) {
+    final int self = getTerritoryOccupantId(territoryId);
+    return Graphs.neighborSetOf(gameBoard, territoryId).stream()
+        .filter(id -> getTerritoryOccupantId(id) == self).collect(Collectors.toSet());
+  }
+
+  public int mobileTroops(int territoryId) {
+    return getTerritoryTroops(territoryId) - 1;
+  }
+
   public int getMaxAttackingTroops(int attackingId) {
-    int troops = getTerritoryTroops(attackingId) - 1;
+    int troops = mobileTroops(attackingId);
     if (occupyOnlyWithAttackingArmies) {
       return troops;
     }
@@ -452,8 +541,18 @@ public class RiskBoard {
   public void occupy(int troops) {
     territories.get(attackingId).removeTroops(troops);
     territories.get(defendingId).addTroops(troops);
-    involvedTroopsInAttacks.compute(attackingId, (k, v) -> v == null ? 0 : Math.max(0, v - troops));
+    involvedTroopsInAttacks
+        .compute(attackingId, (k, v) -> v == null ? 0 : Math.max(0, v - troops));
     involvedTroopsInAttacks.compute(defendingId, (k, v) -> v == null ? troops : v + troops);
+    if (!fortifyOnlyFromSingleTerritory) {
+      int attackerId = getTerritoryOccupantId(attackingId);
+      for (Integer neighbor : neighboringFriendlyTerritories(defendingId)) {
+        DefaultEdge edge = fortifyConnectivityGraph.get(attackerId).addEdge(neighbor, defendingId);
+        fortifyConnectivityInspector.get(attackerId).edgeAdded(
+            new GraphEdgeChangeEvent<>(this, GraphEdgeChangeEvent.EDGE_ADDED, edge, neighbor,
+                defendingId));
+      }
+    }
     attackingId = -1;
     defendingId = -1;
     this.troops = 0;
@@ -539,6 +638,18 @@ public class RiskBoard {
         .allMatch(occupiedTerritories::contains); // all required territories occupied
   }
 
+  public Set<Integer> fortifyableTerritories(int territoryId) {
+    if (fortifyOnlyFromSingleTerritory) {
+      return neighboringFriendlyTerritories(territoryId);
+    }
+
+    int player = getTerritoryOccupantId(territoryId);
+    Set<Integer> fortifyableTerritories = fortifyConnectivityInspector.get(player)
+        .connectedSetOf(territoryId);
+    fortifyableTerritories.remove(territoryId);
+    return fortifyableTerritories;
+  }
+
   private Map<Integer, Set<Integer>> playerConqueredContinents() {
     Map<Integer, Map<Integer, RiskTerritory>> continents = new HashMap<>();
     for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
@@ -589,8 +700,9 @@ public class RiskBoard {
         .filter(m -> m.getRiskMissionType() == RiskMissionType.OCCUPY_TERRITORY).findFirst();
 
     if (fallbackOptional.isEmpty()) {
-      System.err.println("Warning: No fallback (any OCCUPY_TERRITORY) mission could be determined."
-          + " Mission-dealing could take a while");
+      System.err
+          .println("Warning: No fallback (any OCCUPY_TERRITORY) mission could be determined."
+              + " Mission-dealing could take a while");
 
       if (missionList.size() < playerMissions.length) {
         throw new IllegalArgumentException("More players then missions");

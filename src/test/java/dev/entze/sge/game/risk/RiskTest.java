@@ -773,12 +773,14 @@ public class RiskTest {
   public void prop_onlyPossibleActionsAreValid(@From(RiskGenerator.class) Risk risk,
       @From(RiskActionGenerator.class) RiskAction action) {
 
+    fail();
     assertTrue(!risk.isValidAction(action) || risk.getPossibleActions().contains(action));
 
   }
 
   @Property
   public void prop_doingValidActionDoesNotThrowException(@From(RiskGenerator.class) Risk risk) {
+    fail();
     for (RiskAction possibleAction : risk.getPossibleActions()) {
       try {
         risk.doAction(possibleAction);
@@ -792,6 +794,7 @@ public class RiskTest {
   public void prop_anyValidCanonicalActionIsAlsoValidNonCanonicalAction(
       @From(RiskGenerator.class) /*TODO: Only generate canonical games*/ Risk risk,
       @From(RiskActionGenerator.class) RiskAction action) {
+    fail();
     assertEquals(risk.isValidAction(action), risk.getGame().isValidAction(action));
   }
 
@@ -799,12 +802,14 @@ public class RiskTest {
   public void prop_allPossibleCanonicalActionsAreAlsoPossibleNonCanonicalActions(
       @From(RiskGenerator.class) Risk risk) {
 
+    fail();
     assertTrue(risk.getGame().getPossibleActions().containsAll(risk.getPossibleActions()));
 
   }
 
   @Property
   public void prop_allPossibleActionsAreValid(@From(RiskGenerator.class) Risk risk) {
+    fail();
     Set<RiskAction> possibleActions = risk.getPossibleActions();
     for (RiskAction action : possibleActions) {
       assertTrue(risk.isValidAction(action));
