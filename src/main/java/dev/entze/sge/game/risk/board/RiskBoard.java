@@ -692,7 +692,7 @@ public class RiskBoard {
 
   public boolean canFortify(int fortifyingId, int fortifiedId) {
     int occupant = getTerritoryOccupantId(fortifyingId);
-    return occupant > 0 && occupant == getTerritoryOccupantId(fortifiedId)
+    return occupant >= 0 && occupant == getTerritoryOccupantId(fortifiedId)
         && (fortifyOnlyFromSingleTerritory || fortifyConnectivityInspector.get(occupant)
         .pathExists(fortifyingId, fortifiedId))
         && (!fortifyOnlyFromSingleTerritory || areNeighbors(fortifyingId, fortifiedId));

@@ -101,7 +101,17 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public double getUtilityValue(int i) {
+    Set<Integer> playersInGame = board.getTerritories().values().stream()
+        .map(RiskTerritory::getOccupantPlayerId).collect(Collectors.toSet());
+    if (playersInGame.size() <= 1 && playersInGame.contains(i)) {
+      return 1;
+    }
     return 0;
+  }
+
+  @Override
+  public double getHeuristicValue(int player) {
+    return board.getNrOfTerritoriesOccupiedByPlayer(player);
   }
 
   @Override
@@ -293,12 +303,13 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       int fortifiedId = riskAction.fortifiedId();
       int troops = riskAction.troops();
 
-      return board.isTerritory(fortifyingId) && board.isTerritory(fortifiedId)
+      return riskAction.isEndPhase() || (board.isTerritory(fortifyingId) && board
+          .isTerritory(fortifiedId)
           && board.getTerritoryOccupantId(fortifyingId) == currentPlayerId
           && board.getTerritoryOccupantId(fortifiedId) == currentPlayerId
           && 0 < troops
           && troops <= board.getFortifyableTroops(fortifyingId)
-          && board.canFortify(fortifyingId, fortifiedId);
+          && board.canFortify(fortifyingId, fortifiedId));
 
     }
     return false;
@@ -538,7 +549,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     int troops = riskAction.troops();
 
     Risk next = new Risk(this);
-    if (!riskAction.isEndPhase()) {
+    if (riskAction.isEndPhase()) {
+      next.endMove();
+    } else {
       {
         StringBuilder errorMsg = new StringBuilder();
 

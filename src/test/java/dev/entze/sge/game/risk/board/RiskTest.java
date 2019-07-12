@@ -179,10 +179,11 @@ public class RiskTest {
         + "    territoryId: 1\n"
         + "  : null\n"
         + "withCards: true\n"
-        + "withMissions: true";
+        + "withMissions: true\n";
 
     RiskConfiguration riskConfiguration = yaml.load(config);
 
+    assertEquals(config, yaml.dump(riskConfiguration));
 
   }
 
