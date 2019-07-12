@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -109,4 +110,31 @@ public class RiskMissionConfiguration {
   public void setOccupyingWith(int occupyingWith) {
     this.occupyingWith = occupyingWith;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    RiskMissionConfiguration that = (RiskMissionConfiguration) o;
+
+    if (missionType == RiskMissionType.OCCUPY_TERRITORY) {
+      return occupyingWith == that.occupyingWith &&
+          missionType == that.missionType &&
+          targetIds.equals(that.targetIds);
+    }
+    return missionType == that.missionType && targetIds.equals(that.targetIds);
+  }
+
+  @Override
+  public int hashCode() {
+    if (missionType == RiskMissionType.OCCUPY_TERRITORY) {
+      return Objects.hash(missionType, targetIds, occupyingWith);
+    }
+    return Objects.hash(missionType, targetIds);
+  }
 }
+

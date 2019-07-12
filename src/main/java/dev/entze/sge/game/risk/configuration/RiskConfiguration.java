@@ -56,7 +56,7 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -179,9 +179,9 @@ public class RiskConfiguration {
   private boolean fortifyOnlyFromSingleTerritory = true;
   private boolean fortifyOnlyWithNonFightingArmies = false;
   private boolean withMissions = true;
-  private Set<RiskMissionConfiguration> missions = new HashSet<>();
-  private Set<RiskContinentConfiguration> continents;
-  private Set<RiskTerritoryConfiguration> territories;
+  private Collection<RiskMissionConfiguration> missions = new HashSet<>();
+  private Collection<RiskContinentConfiguration> continents;
+  private Collection<RiskTerritoryConfiguration> territories;
   private String map;
 
   public RiskConfiguration() {
@@ -224,15 +224,20 @@ public class RiskConfiguration {
     this.map = map;
   }
 
+  private static Yaml riskConfigurationYaml = null;
+
   public static Yaml getYaml() {
-    Constructor constructor = new Constructor(RiskConfiguration.class);
-    TypeDescription riskConfigurationDescription = new TypeDescription(RiskConfiguration.class);
-    riskConfigurationDescription
-        .addPropertyParameters("continents", RiskContinentConfiguration.class);
-    riskConfigurationDescription
-        .addPropertyParameters("territories", RiskTerritoryConfiguration.class);
-    constructor.addTypeDescription(riskConfigurationDescription);
-    return new Yaml(constructor);
+    if (riskConfigurationYaml == null) {
+      Constructor constructor = new Constructor(RiskConfiguration.class);
+      TypeDescription riskConfigurationDescription = new TypeDescription(RiskConfiguration.class);
+      riskConfigurationDescription
+          .addPropertyParameters("continents", RiskContinentConfiguration.class);
+      riskConfigurationDescription
+          .addPropertyParameters("territories", RiskTerritoryConfiguration.class);
+      constructor.addTypeDescription(riskConfigurationDescription);
+      riskConfigurationYaml = new Yaml(constructor);
+    }
+    return riskConfigurationYaml;
   }
 
 
@@ -368,31 +373,31 @@ public class RiskConfiguration {
     this.withMissions = withMissions;
   }
 
-  public Set<RiskMissionConfiguration> getMissions() {
+  public Collection<RiskMissionConfiguration> getMissions() {
     return missions;
   }
 
   public void setMissions(
-      Set<RiskMissionConfiguration> missions) {
-    this.missions = missions;
+      Collection<RiskMissionConfiguration> missions) {
+    this.missions = new HashSet<>(missions);
   }
 
-  public Set<RiskContinentConfiguration> getContinents() {
+  public Collection<RiskContinentConfiguration> getContinents() {
     return continents;
   }
 
   public void setContinents(
-      Set<RiskContinentConfiguration> continents) {
-    this.continents = continents;
+      Collection<RiskContinentConfiguration> continents) {
+    this.continents = new HashSet<>(continents);
   }
 
-  public Set<RiskTerritoryConfiguration> getTerritories() {
+  public Collection<RiskTerritoryConfiguration> getTerritories() {
     return territories;
   }
 
   public void setTerritories(
-      Set<RiskTerritoryConfiguration> territories) {
-    this.territories = territories;
+      Collection<RiskTerritoryConfiguration> territories) {
+    this.territories = new HashSet<>(territories);
   }
 
   public String getMap() {
@@ -401,5 +406,47 @@ public class RiskConfiguration {
 
   public void setMap(String map) {
     this.map = map;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    RiskConfiguration that = (RiskConfiguration) o;
+    return getMaxNumberOfPlayers() == that.getMaxNumberOfPlayers() &&
+        getMaxAttackerDice() == that.getMaxAttackerDice() &&
+        getMaxDefenderDice() == that.getMaxDefenderDice() &&
+        isWithCards() == that.isWithCards() &&
+        getCardTypesWithoutJoker() == that.getCardTypesWithoutJoker() &&
+        getNumberOfJokers() == that.getNumberOfJokers() &&
+        isChooseInitialTerritories() == that.isChooseInitialTerritories() &&
+        getReinforcementAtLeast() == that.getReinforcementAtLeast() &&
+        getReinforcementThreshold() == that.getReinforcementThreshold() &&
+        isOccupyOnlyWithAttackingArmies() == that.isOccupyOnlyWithAttackingArmies() &&
+        isFortifyOnlyFromSingleTerritory() == that.isFortifyOnlyFromSingleTerritory() &&
+        isFortifyOnlyWithNonFightingArmies() == that.isFortifyOnlyWithNonFightingArmies() &&
+        isWithMissions() == that.isWithMissions() &&
+        Arrays.equals(getInitialTroops(), that.getInitialTroops()) &&
+        getMissions().equals(that.getMissions()) &&
+        getContinents().equals(that.getContinents()) &&
+        getTerritories().equals(that.getTerritories()) &&
+        getMap().equals(that.getMap());
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Objects
+        .hash(getMaxNumberOfPlayers(), getMaxAttackerDice(), getMaxDefenderDice(), isWithCards(),
+            getCardTypesWithoutJoker(), getNumberOfJokers(), isChooseInitialTerritories(),
+            getReinforcementAtLeast(), getReinforcementThreshold(),
+            isOccupyOnlyWithAttackingArmies(),
+            isFortifyOnlyFromSingleTerritory(), isFortifyOnlyWithNonFightingArmies(),
+            isWithMissions(), getMissions(), getContinents(), getTerritories(), getMap());
+    result = 31 * result + Arrays.hashCode(getInitialTroops());
+    return result;
   }
 }

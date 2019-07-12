@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +96,8 @@ public class RiskBoard {
       allMissions = null;
       playerMissions = null;
     }
-    Set<RiskTerritoryConfiguration> territoriesConfiguration = configuration.getTerritories();
+    Set<RiskTerritoryConfiguration> territoriesConfiguration = new HashSet<>(
+        configuration.getTerritories());
 
     territories = territoriesConfiguration.stream().collect(
         Collectors.toUnmodifiableMap(RiskTerritoryConfiguration::getTerritoryId,
@@ -141,7 +143,8 @@ public class RiskBoard {
       playerCards = null;
     }
 
-    Set<RiskContinentConfiguration> continentsConfiguration = configuration.getContinents();
+    Set<RiskContinentConfiguration> continentsConfiguration = new HashSet<>(
+        configuration.getContinents());
 
     this.continents = continentsConfiguration.stream().collect(Collectors
         .toUnmodifiableMap(RiskContinentConfiguration::getContinentId,

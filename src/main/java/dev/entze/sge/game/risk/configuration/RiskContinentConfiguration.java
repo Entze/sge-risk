@@ -3,6 +3,7 @@ package dev.entze.sge.game.risk.configuration;
 import dev.entze.sge.game.risk.board.RiskContinent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class RiskContinentConfiguration {
 
@@ -53,5 +54,20 @@ public class RiskContinentConfiguration {
     this.troopBonus = troopBonus;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    RiskContinentConfiguration that = (RiskContinentConfiguration) o;
+    return continentId == that.continentId;
+  }
 
+  @Override
+  public int hashCode() {
+    return Objects.hash(continentId);
+  }
 }

@@ -14,6 +14,7 @@ import dev.entze.sge.game.risk.board.RiskTerritory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -311,5 +312,22 @@ public class RiskTerritoryConfiguration {
 
   public void setContinentId(int continentId) {
     this.continentId = continentId;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    RiskTerritoryConfiguration that = (RiskTerritoryConfiguration) o;
+    return territoryId == that.territoryId;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(territoryId);
   }
 }
