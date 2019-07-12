@@ -11,11 +11,13 @@ import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.N
 import static dev.entze.sge.game.risk.configuration.RiskContinentConfiguration.SOUTH_AMERICA;
 
 import dev.entze.sge.game.risk.board.RiskTerritory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RiskTerritoryConfiguration {
@@ -247,14 +249,14 @@ public class RiskTerritoryConfiguration {
   private int territoryId;
   private int cardType;
   private int continentId;
-  private Set<Integer> connects;
+  private List<Integer> connects;
 
   public RiskTerritoryConfiguration(int cardType, RiskContinentConfiguration continentConfiguration,
       RiskTerritoryConfiguration... connectsWith) {
     territoryId = tid++;
     continentId = continentConfiguration.getContinentId();
     this.cardType = cardType;
-    this.connects = getConnectsSet(connectsWith);
+    this.connects = new ArrayList<>(getConnectsSet(connectsWith));
   }
 
   public RiskTerritoryConfiguration() {
@@ -265,14 +267,14 @@ public class RiskTerritoryConfiguration {
   }
 
   public RiskTerritoryConfiguration(int territoryId, int cardType, int continentId,
-      Set<Integer> connects) {
+      Collection<Integer> connects) {
     this.territoryId = territoryId;
     this.cardType = cardType;
     this.continentId = continentId;
-    this.connects = connects;
+    this.connects = new ArrayList<>(new HashSet<>(connects));
   }
 
-  public static Set<Integer> getConnectsSet(RiskTerritoryConfiguration... configurations) {
+  public static Collection<Integer> getConnectsSet(RiskTerritoryConfiguration... configurations) {
     return Arrays.stream(configurations)
         .map(configuration -> configuration.territoryId)
         .collect(Collectors.toSet());
@@ -298,12 +300,12 @@ public class RiskTerritoryConfiguration {
     this.cardType = cardType;
   }
 
-  public Set<Integer> getConnects() {
+  public List<Integer> getConnects() {
     return connects;
   }
 
-  public void setConnects(Set<Integer> connects) {
-    this.connects = connects;
+  public void setConnects(List<Integer> connects) {
+    this.connects = new ArrayList<>(new HashSet<>(connects));
   }
 
   public int getContinentId() {

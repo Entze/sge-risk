@@ -99,9 +99,14 @@ public class RiskBoard {
     Set<RiskTerritoryConfiguration> territoriesConfiguration = new HashSet<>(
         configuration.getTerritories());
 
-    territories = territoriesConfiguration.stream().collect(
-        Collectors.toUnmodifiableMap(RiskTerritoryConfiguration::getTerritoryId,
-            RiskTerritoryConfiguration::getTerritory, (a, b) -> b));
+    Map<Integer, RiskTerritory> territoryMap = new HashMap<>();
+
+    for (RiskTerritoryConfiguration riskTerritoryConfiguration : territoriesConfiguration) {
+      territoryMap.put(riskTerritoryConfiguration.getTerritoryId(),
+          riskTerritoryConfiguration.getTerritory());
+    }
+
+    territories = Map.copyOf(territoryMap);
 
     gameBoard = new SimpleGraph<>(DefaultEdge.class);
     if (fortifyOnlyFromSingleTerritory) {

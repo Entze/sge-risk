@@ -13,7 +13,9 @@ import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
 import dev.entze.sge.game.risk.generators.RiskActionGenerator;
 import dev.entze.sge.game.risk.generators.RiskGenerator;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -29,9 +31,8 @@ public class RiskTest {
       "!!dev.entze.sge.game.risk.configuration.RiskConfiguration\n"
           + "cardTypesWithoutJoker: 3\n"
           + "chooseInitialTerritories: false\n"
-          + "continents: !!set\n"
-          + "  ? {continentId: 0, troopBonus: 1}\n"
-          + "  : null\n"
+          + "continents:\n"
+          + "- {continentId: 0, troopBonus: 1}\n"
           + "fortifyOnlyFromSingleTerritory: true\n"
           + "fortifyOnlyWithNonFightingArmies: false\n"
           + "initialTroops: [3]\n"
@@ -49,33 +50,26 @@ public class RiskTest {
           + "maxAttackerDice: 3\n"
           + "maxDefenderDice: 2\n"
           + "maxNumberOfPlayers: 2\n"
-          + "missions: !!set {}\n"
+          + "missions: []\n"
           + "numberOfJokers: 2\n"
           + "occupyOnlyWithAttackingArmies: false\n"
           + "reinforcementAtLeast: 3\n"
           + "reinforcementThreshold: 3\n"
-          + "territories: !!set\n"
-          + "  ? cardType: 1\n"
-          + "    connects: !!set {0: null, 2: null}\n"
-          + "    territoryId: 1\n"
-          + "  : null\n"
-          + "  ? cardType: 0\n"
-          + "    connects: !!set {2: null, 1: null}\n"
-          + "    territoryId: 0\n"
-          + "  : null\n"
-          + "  ? cardType: 2\n"
-          + "    connects: !!set {1: null, 0: null}\n"
-          + "    territoryId: 2\n"
-          + "  : null\n"
+          + "territories:\n"
+          + "- cardType: 1\n"
+          + "  connects: [0, 2]\n"
+          + "  continentId: 0\n"
+          + "  territoryId: 1\n"
+          + "- cardType: 2\n"
+          + "  connects: [0, 1]\n"
+          + "  continentId: 0\n"
+          + "  territoryId: 2\n"
+          + "- cardType: 0\n"
+          + "  connects: [1, 2]\n"
+          + "  continentId: 0\n"
+          + "  territoryId: 0\n"
           + "withCards: true\n"
-          + "withMissions: true";
-
-  private Risk simpleRisk = new Risk(simpleConfigYaml, 2);
-  private Risk defaultRisk2 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 2);
-  private Risk defaultRisk3 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 3);
-  private Risk defaultRisk4 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 4);
-  private Risk defaultRisk5 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 5);
-  private Risk defaultRisk6 = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 6);
+          + "withMissions: true\n";
 
   @Test
   public void test_yaml_dump_0() {
@@ -95,14 +89,14 @@ public class RiskTest {
 
     riskConfiguration.setCardTypesWithoutJoker(3);
     riskConfiguration.setChooseInitialTerritories(false);
-    riskConfiguration.setContinents(Set.of(new RiskContinentConfiguration(0, 1)));
+    riskConfiguration.setContinents(List.of(new RiskContinentConfiguration(0, 1)));
     Set<RiskTerritoryConfiguration> territories = new HashSet<>();
     IntStream.range(0, 3).forEach(i -> {
       RiskTerritoryConfiguration territory = new RiskTerritoryConfiguration(i, i, 0);
-      territory.setConnects(Set.of((i + 2) % 3, (i + 1) % 3));
+      territory.setConnects(List.of((i + 2) % 3, (i + 1) % 3));
       territories.add(territory);
     });
-    riskConfiguration.setTerritories(territories);
+    riskConfiguration.setTerritories(new ArrayList<>(territories));
     riskConfiguration.setInitialTroops(3);
     riskConfiguration.setMap("+-----+\n"
         + "|2[0]2|\n"
@@ -126,7 +120,7 @@ public class RiskTest {
 
     String config = yaml.dump(RiskConfiguration.RISK_DEFAULT_CONFIG);
 
-    assertEquals(RiskConfiguration.RISK_DEFAULT_CONFIG, yaml.load(config));
+    assertEquals(RiskConfiguration.RISK_DEFAULT_CONFIG, (RiskConfiguration) yaml.load(config));
 
   }
 
@@ -134,56 +128,9 @@ public class RiskTest {
   public void test_yaml_load_1() {
     Yaml yaml = RiskConfiguration.getYaml();
 
-    String config = "!!dev.entze.sge.game.risk.configuration.RiskConfiguration\n"
-        + "cardTypesWithoutJoker: 3\n"
-        + "chooseInitialTerritories: false\n"
-        + "continents: !!set\n"
-        + "  ? {continentId: 0, troopBonus: 1}\n"
-        + "  : null\n"
-        + "fortifyOnlyFromSingleTerritory: true\n"
-        + "fortifyOnlyWithNonFightingArmies: false\n"
-        + "initialTroops: [3]\n"
-        + "map: |-\n"
-        + "  +-----+\n"
-        + "  |2[0]2|\n"
-        + "  +-----+\n"
-        + "  7\\5+-----+\n"
-        + "  8\\____|2[1]2|\n"
-        + "  8/4+-----+\n"
-        + "  7/\n"
-        + "  +-----+\n"
-        + "  |2[2]2|\n"
-        + "  +-----+\n"
-        + "maxAttackerDice: 3\n"
-        + "maxDefenderDice: 2\n"
-        + "maxNumberOfPlayers: 2\n"
-        + "missions: !!set {}\n"
-        + "numberOfJokers: 2\n"
-        + "occupyOnlyWithAttackingArmies: false\n"
-        + "reinforcementAtLeast: 3\n"
-        + "reinforcementThreshold: 3\n"
-        + "territories: !!set\n"
-        + "  ? cardType: 0\n"
-        + "    connects: !!set {1: null, 2: null}\n"
-        + "    continentId: 0\n"
-        + "    territoryId: 0\n"
-        + "  : null\n"
-        + "  ? cardType: 2\n"
-        + "    connects: !!set {0: null, 1: null}\n"
-        + "    continentId: 0\n"
-        + "    territoryId: 2\n"
-        + "  : null\n"
-        + "  ? cardType: 1\n"
-        + "    connects: !!set {2: null, 0: null}\n"
-        + "    continentId: 0\n"
-        + "    territoryId: 1\n"
-        + "  : null\n"
-        + "withCards: true\n"
-        + "withMissions: true\n";
+    RiskConfiguration riskConfiguration = yaml.load(simpleConfigYaml);
 
-    RiskConfiguration riskConfiguration = yaml.load(config);
-
-    assertEquals(config, yaml.dump(riskConfiguration));
+    assertEquals(simpleConfigYaml, yaml.dump(riskConfiguration));
 
   }
 
@@ -893,6 +840,7 @@ public class RiskTest {
   public void prop_onlyPossibleActionsAreValid(@From(RiskGenerator.class) Risk risk,
       @From(RiskActionGenerator.class) RiskAction action) {
 
+    fail();
     assertTrue(!risk.isValidAction(action) || risk.getPossibleActions().contains(action));
 
   }

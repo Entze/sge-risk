@@ -9,6 +9,7 @@ import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskMissionConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
 import dev.entze.sge.game.risk.mission.RiskMissionType;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -69,10 +70,10 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
       }
     }
 
-    riskConfiguration.setContinents(continents);
-    riskConfiguration.setTerritories(territories);
+    riskConfiguration.setContinents(new ArrayList<>(continents));
+    riskConfiguration.setTerritories(new ArrayList<>(territories));
     if (riskConfiguration.isWithMissions()) {
-      riskConfiguration.setMissions(missions);
+      riskConfiguration.setMissions(new ArrayList<>(missions));
     }
 
     Set<RiskTerritoryConfiguration> validTerritories = new HashSet<>();
@@ -96,7 +97,7 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
         }
       }
 
-      Set<Integer> connects = territory.getConnects();
+      Set<Integer> connects = new HashSet<>(territory.getConnects());
       do {
         connects = connects.stream()
             .filter(i -> territories.stream().anyMatch(t -> t.getTerritoryId() == i))
@@ -189,9 +190,9 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
 
     }
 
-    riskConfiguration.setTerritories(validTerritories);
+    riskConfiguration.setTerritories(new ArrayList<>(validTerritories));
     if (riskConfiguration.isWithMissions()) {
-      riskConfiguration.setMissions(validMissions);
+      riskConfiguration.setMissions(new ArrayList<>(validMissions));
     }
     riskConfiguration.getInitialTroops();
 

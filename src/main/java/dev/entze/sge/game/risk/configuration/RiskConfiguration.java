@@ -53,13 +53,18 @@ import static dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration.Y
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.representer.Representer;
 
 public class RiskConfiguration {
 
@@ -179,9 +184,9 @@ public class RiskConfiguration {
   private boolean fortifyOnlyFromSingleTerritory = true;
   private boolean fortifyOnlyWithNonFightingArmies = false;
   private boolean withMissions = true;
-  private Collection<RiskMissionConfiguration> missions = new HashSet<>();
-  private Collection<RiskContinentConfiguration> continents;
-  private Collection<RiskTerritoryConfiguration> territories;
+  private List<RiskMissionConfiguration> missions = new ArrayList<>();
+  private List<RiskContinentConfiguration> continents;
+  private List<RiskTerritoryConfiguration> territories;
   private String map;
 
   public RiskConfiguration() {
@@ -210,8 +215,8 @@ public class RiskConfiguration {
     this.fortifyOnlyWithNonFightingArmies = fortifyOnlyWithNonFightingArmies;
     this.withMissions = withMissions;
     this.missions.addAll(missions);
-    this.continents = new HashSet<>(continents);
-    this.territories = new HashSet<>(territories);
+    this.continents = new ArrayList<>(new HashSet<>(continents));
+    this.territories = new ArrayList<>(new HashSet<>(territories));
     this.map = map;
   }
 
@@ -219,8 +224,8 @@ public class RiskConfiguration {
   public RiskConfiguration(
       Collection<RiskContinentConfiguration> continents,
       Collection<RiskTerritoryConfiguration> territories, String map) {
-    this.continents = new HashSet<>(continents);
-    this.territories = new HashSet<>(territories);
+    this.continents = new ArrayList<>(new HashSet<>(continents));
+    this.territories = new ArrayList<>(new HashSet<>(territories));
     this.map = map;
   }
 
@@ -229,13 +234,19 @@ public class RiskConfiguration {
   public static Yaml getYaml() {
     if (riskConfigurationYaml == null) {
       Constructor constructor = new Constructor(RiskConfiguration.class);
+      Representer representer = new Representer();
+      representer.getPropertyUtils().setSkipMissingProperties(true);
+      DumperOptions dumperOptions = new DumperOptions();
+      dumperOptions.setDefaultFlowStyle(FlowStyle.AUTO);
       TypeDescription riskConfigurationDescription = new TypeDescription(RiskConfiguration.class);
       riskConfigurationDescription
           .addPropertyParameters("continents", RiskContinentConfiguration.class);
       riskConfigurationDescription
           .addPropertyParameters("territories", RiskTerritoryConfiguration.class);
+      riskConfigurationDescription
+          .addPropertyParameters("missions", RiskMissionConfiguration.class);
       constructor.addTypeDescription(riskConfigurationDescription);
-      riskConfigurationYaml = new Yaml(constructor);
+      riskConfigurationYaml = new Yaml(constructor, representer, dumperOptions);
     }
     return riskConfigurationYaml;
   }
@@ -373,31 +384,31 @@ public class RiskConfiguration {
     this.withMissions = withMissions;
   }
 
-  public Collection<RiskMissionConfiguration> getMissions() {
+  public List<RiskMissionConfiguration> getMissions() {
     return missions;
   }
 
   public void setMissions(
-      Collection<RiskMissionConfiguration> missions) {
-    this.missions = new HashSet<>(missions);
+      List<RiskMissionConfiguration> missions) {
+    this.missions = new ArrayList<>(new HashSet<>(missions));
   }
 
-  public Collection<RiskContinentConfiguration> getContinents() {
+  public List<RiskContinentConfiguration> getContinents() {
     return continents;
   }
 
   public void setContinents(
-      Collection<RiskContinentConfiguration> continents) {
-    this.continents = new HashSet<>(continents);
+      List<RiskContinentConfiguration> continents) {
+    this.continents = new ArrayList<>(new HashSet<>(continents));
   }
 
-  public Collection<RiskTerritoryConfiguration> getTerritories() {
+  public List<RiskTerritoryConfiguration> getTerritories() {
     return territories;
   }
 
   public void setTerritories(
-      Collection<RiskTerritoryConfiguration> territories) {
-    this.territories = new HashSet<>(territories);
+      List<RiskTerritoryConfiguration> territories) {
+    this.territories = new ArrayList<>(new HashSet<>(territories));
   }
 
   public String getMap() {

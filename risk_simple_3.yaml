@@ -1,9 +1,7 @@
-!!dev.entze.sge.game.risk.configuration.RiskConfiguration
 cardTypesWithoutJoker: 3
 chooseInitialTerritories: false
-continents: !!set
-  ? {continentId: 0, troopBonus: 1}
-    : null
+continents:
+  - {continentId: 0, troopBonus: 1}
 fortifyOnlyFromSingleTerritory: true
 fortifyOnlyWithNonFightingArmies: false
 initialTroops: [3]
@@ -21,26 +19,23 @@ map: |-
 maxAttackerDice: 3
 maxDefenderDice: 2
 maxNumberOfPlayers: 2
-missions: !!set {}
+missions: []
 numberOfJokers: 2
 occupyOnlyWithAttackingArmies: false
 reinforcementAtLeast: 3
 reinforcementThreshold: 3
-territories: !!set
-  ? cardType: 0
-    connects: !!set {1: null, 2: null}
-    continentId: 0
-    territoryId: 0
-    : null
-  ? cardType: 2
-    connects: !!set {0: null, 1: null}
-    continentId: 0
-    territoryId: 2
-    : null
-  ? cardType: 1
-    connects: !!set {2: null, 0: null}
+territories:
+  - cardType: 1
+    connects: [0, 2]
     continentId: 0
     territoryId: 1
-    : null
+  - cardType: 2
+    connects: [0, 1]
+    continentId: 0
+    territoryId: 2
+  - cardType: 0
+    connects: [1, 2]
+    continentId: 0
+    territoryId: 0
 withCards: true
-withMissions: true
+withMissions: false
