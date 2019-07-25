@@ -193,6 +193,10 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Set<RiskAction> actions = new HashSet<>();
     int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
 
+    /*if(board.canTradeInCards(currentPlayerId)){
+
+    }*/
+
     for (int r = 1; r <= reinforcementsLeft; r++) {
       int finalR = r;
       actions.addAll(board.getTerritories().entrySet().stream()

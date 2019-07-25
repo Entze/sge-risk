@@ -59,7 +59,7 @@ public class RiskBoard {
   private final Set<RiskMission> allMissions;
   private final RiskMission[] playerMissions;
 
-  private final RiskCard[][] playerCards;
+  private final Map<Integer, Collection<RiskCard>> playerCards;
 
   private final Map<Integer, RiskContinent> continents;
 
@@ -142,7 +142,9 @@ public class RiskBoard {
       }
       Collections.shuffle(cardList);
       deckOfCards = new ArrayDeque<>(cardList);
-      playerCards = new RiskCard[numberOfPlayers][cardTypesWithoutJoker * 3];
+      playerCards = IntStream.range(0, numberOfPlayers).boxed().collect(Collectors
+          .toUnmodifiableMap(p -> p, p -> Arrays.asList(new RiskCard[cardTypesWithoutJoker * 2])));
+
     } else {
       deckOfCards = null;
       playerCards = null;
@@ -237,7 +239,7 @@ public class RiskBoard {
       Map<Integer, ConnectivityInspector<Integer, DefaultEdge>> fortifyConnectivityInspector,
       Collection<RiskCard> deckOfCards, Set<RiskMission> allMissions,
       RiskMission[] playerMissions,
-      RiskCard[][] playerCards,
+      Map<Integer, Collection<RiskCard>> playerCards,
       Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements,
       Map<Integer, Integer> involvedTroopsInAttacks, int attackingId,
       int defendingId, int troops, boolean hasOccupiedCountry, RiskPhase phase,
@@ -293,7 +295,7 @@ public class RiskBoard {
     this.deckOfCards = deckOfCards != null ? new ArrayDeque<>(deckOfCards) : null;
     this.allMissions = allMissions;
     this.playerMissions = playerMissions != null ? playerMissions.clone() : null;
-    this.playerCards = playerCards != null ? playerCards.clone() : null;
+    this.playerCards = playerCards != null ? Map.copyOf(playerCards) : null;
     this.continents = continents;
     this.nonDeployedReinforcements = nonDeployedReinforcements.clone();
     this.involvedTroopsInAttacks = new HashMap<>(involvedTroopsInAttacks);
@@ -570,7 +572,7 @@ public class RiskBoard {
     phase = RiskPhase.ATTACK;
   }
 
-  PriestLogic missionFulfilled(int player) {
+  public PriestLogic missionFulfilled(int player) {
     if (playerMissions == null) {
       return PriestLogic.FALSE;
     }
@@ -722,6 +724,11 @@ public class RiskBoard {
     }
 
     return Math.min(troops, getMobileTroops(territoryId));
+  }
+
+
+  public PriestLogic canTradeInCards(int player) {
+    return PriestLogic.UNKNOWN;
   }
 
   private enum RiskPhase {
