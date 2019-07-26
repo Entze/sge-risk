@@ -4,6 +4,7 @@ import java.util.Objects;
 
 public class RiskCard {
 
+  public static final int WILDCARD = (-1);
   public static final int JOKER = 0;
   public static final int INFANTRY = 1;
   public static final int ARTILLERY = 2;

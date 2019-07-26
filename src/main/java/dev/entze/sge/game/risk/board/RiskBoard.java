@@ -728,7 +728,53 @@ public class RiskBoard {
 
 
   public PriestLogic canTradeInCards(int player) {
-    return PriestLogic.UNKNOWN;
+    PriestLogic hasCorrectCards = PriestLogic.FALSE;
+    if (playerCards.containsKey(player)) {
+      Collection<RiskCard> cards = this.playerCards.get(player);
+      int size = cards.size();
+      boolean hasEnoughCards = size >= cardTypesWithoutJoker;
+      hasCorrectCards = PriestLogic.fromBoolean(hasEnoughCards);
+      if (hasEnoughCards && size < cardTypesWithoutJoker * 2 - 1) {
+        Map<Integer, Integer> numberOfCards = IntStream.rangeClosed(0, cardTypesWithoutJoker)
+            .boxed().collect(Collectors.toMap(i -> i, i -> 0));
+        for (RiskCard card : cards) {
+          if (card.getCardType() != RiskCard.WILDCARD) {
+            numberOfCards.compute(card.getCardType(), (k, v) -> v != null ? v + 1 : 1);
+          } else {
+            hasCorrectCards = PriestLogic.UNKNOWN;
+          }
+        }
+
+        hasCorrectCards = PriestLogic
+            .implies(hasCorrectCards, hasOneOfEach(numberOfCards) || hasAllOfOne(numberOfCards));
+      }
+    }
+    return hasCorrectCards;
+  }
+
+  public boolean hasToTradeInCards(int player) {
+    return playerCards.containsKey(player)
+        && playerCards.get(player).size() >= cardTypesWithoutJoker * 2 - 1;
+  }
+
+  private boolean hasOneOfEach(Map<Integer, Integer> numberOfCards) {
+    final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
+    return numberOfCards.entrySet().stream().filter(
+        e -> e.getValue() > 0
+            && e.getKey() != RiskCard.JOKER
+            && e.getKey() != RiskCard.WILDCARD)
+        .count()
+        + numberOfJokers >= cardTypesWithoutJoker;
+  }
+
+  private boolean hasAllOfOne(Map<Integer, Integer> numberOfCards) {
+    final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
+
+    return numberOfCards.entrySet().stream().filter(
+        e -> e.getValue() > 0
+            && e.getKey() != RiskCard.JOKER
+            && e.getKey() != RiskCard.WILDCARD)
+        .anyMatch(e -> e.getValue() + numberOfJokers >= cardTypesWithoutJoker);
   }
 
   private enum RiskPhase {

@@ -37,9 +37,26 @@ public enum PriestLogic {
     return not(a.internalValue);
   }
 
-  private static PriestLogic and(PriestLogic a, PriestLogic b) {
+  public static PriestLogic not(boolean a) {
+    return fromBoolean(!a);
+  }
+
+  public static PriestLogic and(PriestLogic a, PriestLogic b) {
     return and(a.internalValue, b.internalValue);
   }
+
+  public static PriestLogic and(PriestLogic a, boolean b) {
+    return and(a, fromBoolean(b));
+  }
+
+  public static PriestLogic and(boolean a, PriestLogic b) {
+    return and(fromBoolean(a), b);
+  }
+
+  public static PriestLogic and(boolean a, boolean b) {
+    return fromBoolean(a && b);
+  }
+
 
   private static PriestLogic and(int a, int b) {
     return invertFromInternalValue(Math.min(a, b));
@@ -47,6 +64,18 @@ public enum PriestLogic {
 
   public static PriestLogic or(PriestLogic a, PriestLogic b) {
     return or(a.internalValue, b.internalValue);
+  }
+
+  public static PriestLogic or(PriestLogic a, boolean b) {
+    return or(a, fromBoolean(b));
+  }
+
+  public static PriestLogic or(boolean a, PriestLogic b) {
+    return or(fromBoolean(a), b);
+  }
+
+  public static PriestLogic or(boolean a, boolean b) {
+    return fromBoolean(a || b);
   }
 
   private static PriestLogic or(int a, int b) {
@@ -57,12 +86,40 @@ public enum PriestLogic {
     return implies(a.internalValue, b.internalValue);
   }
 
+  public static PriestLogic implies(PriestLogic a, boolean b) {
+    return implies(a, fromBoolean(b));
+  }
+
+  public static PriestLogic implies(boolean a, PriestLogic b) {
+    return implies(fromBoolean(a), b);
+  }
+
+  public static PriestLogic implies(boolean a, boolean b) {
+    return fromBoolean(!a || b);
+  }
+
   private static PriestLogic implies(int a, int b) {
     return or(-1 * a, b);
   }
 
   private static PriestLogic xor(int a, int b) {
     return or(and(a, -1 * b), and(-1 * a, b));
+  }
+
+  public static PriestLogic xor(PriestLogic a, PriestLogic b) {
+    return xor(a.internalValue, b.internalValue);
+  }
+
+  public static PriestLogic xor(PriestLogic a, boolean b) {
+    return xor(a, fromBoolean(b));
+  }
+
+  public static PriestLogic xor(boolean a, PriestLogic b) {
+    return xor(fromBoolean(a), b);
+  }
+
+  public static PriestLogic xor(boolean a, boolean b) {
+    return fromBoolean(a ^ b);
   }
 
   private static PriestLogic equivalence(int a, int b) {
@@ -73,8 +130,32 @@ public enum PriestLogic {
     return equivalence(a.internalValue, b.internalValue);
   }
 
+  public static PriestLogic equivalence(PriestLogic a, boolean b) {
+    return equivalence(a, fromBoolean(b));
+  }
+
+  public static PriestLogic equivalence(boolean a, PriestLogic b) {
+    return equivalence(fromBoolean(a), b);
+  }
+
+  public static PriestLogic equivalence(boolean a, boolean b) {
+    return fromBoolean(a == b);
+  }
+
   public static PriestLogic nand(PriestLogic a, PriestLogic b) {
     return nand(a.internalValue, b.internalValue);
+  }
+
+  public static PriestLogic nand(PriestLogic a, boolean b) {
+    return nand(a, fromBoolean(b));
+  }
+
+  public static PriestLogic nand(boolean a, PriestLogic b) {
+    return nand(fromBoolean(a), b);
+  }
+
+  public static PriestLogic nand(boolean a, boolean b) {
+    return fromBoolean(!(a && b));
   }
 
   private static PriestLogic nand(int a, int b) {
@@ -83,6 +164,18 @@ public enum PriestLogic {
 
   public static PriestLogic nor(PriestLogic a, PriestLogic b) {
     return nor(a.internalValue, b.internalValue);
+  }
+
+  public static PriestLogic nor(PriestLogic a, boolean b) {
+    return nor(a, fromBoolean(b));
+  }
+
+  public static PriestLogic nor(boolean a, PriestLogic b) {
+    return nor(fromBoolean(a), b);
+  }
+
+  public static PriestLogic nor(boolean a, boolean b) {
+    return fromBoolean(!(a || b));
   }
 
   private static PriestLogic nor(int a, int b) {
