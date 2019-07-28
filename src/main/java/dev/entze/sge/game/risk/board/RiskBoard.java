@@ -79,6 +79,11 @@ public class RiskBoard {
     maxDefenderDice = configuration.getMaxDefenderDice();
     withCards = configuration.isWithCards();
     cardTypesWithoutJoker = configuration.getCardTypesWithoutJoker();
+    if (!(0 <= configuration.getNumberOfJokers()
+        && configuration.getNumberOfJokers() < cardTypesWithoutJoker)) {
+      throw new IllegalArgumentException(
+          configuration.getNumberOfJokers() + " is an illegal number of jokers");
+    }
     reinforcementAtLeast = configuration.getReinforcementAtLeast();
     reinforcementThreshold = configuration.getReinforcementThreshold();
     occupyOnlyWithAttackingArmies = configuration.isOccupyOnlyWithAttackingArmies();
@@ -143,7 +148,7 @@ public class RiskBoard {
       Collections.shuffle(cardList);
       deckOfCards = new ArrayDeque<>(cardList);
       playerCards = IntStream.range(0, numberOfPlayers).boxed().collect(Collectors
-          .toUnmodifiableMap(p -> p, p -> Arrays.asList(new RiskCard[cardTypesWithoutJoker * 2])));
+          .toUnmodifiableMap(p -> p, p -> new ArrayList<>(cardSlots())));
 
     } else {
       deckOfCards = null;
@@ -734,7 +739,7 @@ public class RiskBoard {
       int size = cards.size();
       boolean hasEnoughCards = size >= cardTypesWithoutJoker;
       hasCorrectCards = PriestLogic.fromBoolean(hasEnoughCards);
-      if (hasEnoughCards && size < cardTypesWithoutJoker * 2 - 1) {
+      if (hasEnoughCards && size < cardSlots() - 1) {
         Map<Integer, Integer> numberOfCards = IntStream.rangeClosed(0, cardTypesWithoutJoker)
             .boxed().collect(Collectors.toMap(i -> i, i -> 0));
         for (RiskCard card : cards) {
@@ -754,7 +759,7 @@ public class RiskBoard {
 
   public boolean hasToTradeInCards(int player) {
     return playerCards.containsKey(player)
-        && playerCards.get(player).size() >= cardTypesWithoutJoker * 2 - 1;
+        && playerCards.get(player).size() >= cardSlots();
   }
 
   private boolean hasOneOfEach(Map<Integer, Integer> numberOfCards) {
@@ -775,6 +780,15 @@ public class RiskBoard {
             && e.getKey() != RiskCard.JOKER
             && e.getKey() != RiskCard.WILDCARD)
         .anyMatch(e -> e.getValue() + numberOfJokers >= cardTypesWithoutJoker);
+  }
+
+
+  private int cardSlots() {
+    return cardSlots(cardTypesWithoutJoker);
+  }
+
+  private int cardSlots(int cardTypesWithoutJoker) {
+    return cardTypesWithoutJoker * cardTypesWithoutJoker + 1;
   }
 
   private enum RiskPhase {

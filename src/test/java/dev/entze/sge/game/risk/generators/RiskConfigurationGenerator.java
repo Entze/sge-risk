@@ -31,7 +31,8 @@ public class RiskConfigurationGenerator extends Generator<RiskConfiguration> {
     riskConfiguration.setMaxDefenderDice(random.nextInt(1, 8));
     riskConfiguration.setWithCards(random.nextBoolean());
     riskConfiguration.setCardTypesWithoutJoker(random.nextInt(2, 8));
-    riskConfiguration.setNumberOfJokers(random.nextInt(2, 8));
+    riskConfiguration
+        .setNumberOfJokers(random.nextInt(riskConfiguration.getCardTypesWithoutJoker()));
     riskConfiguration.setChooseInitialTerritories(random.nextBoolean());
     riskConfiguration.setReinforcementAtLeast(random.nextInt(2, 8));
     riskConfiguration.setReinforcementThreshold(random.nextInt(2, 8));
