@@ -788,6 +788,7 @@ public class RiskBoard {
   }
 
   private int cardSlots(int cardTypesWithoutJoker) {
+    cardTypesWithoutJoker--;
     return cardTypesWithoutJoker * cardTypesWithoutJoker + 1;
   }
 
