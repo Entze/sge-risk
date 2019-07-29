@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.alg.connectivity.ConnectivityInspector;
@@ -731,7 +732,6 @@ public class RiskBoard {
     return Math.min(troops, getMobileTroops(territoryId));
   }
 
-
   public PriestLogic canTradeInCards(int player) {
     PriestLogic hasCorrectCards = PriestLogic.FALSE;
     if (playerCards.containsKey(player)) {
@@ -782,6 +782,74 @@ public class RiskBoard {
         .anyMatch(e -> e.getValue() + numberOfJokers >= cardTypesWithoutJoker);
   }
 
+  public List<Collection<RiskCard>> getTradeInOptions(Collection<RiskCard> playerCards) {
+    List<Collection<RiskCard>> options = new ArrayList<>();
+
+    return options;
+  }
+
+  private Map<Integer, Collection<RiskCard>> mapToCardTypes(
+      final Collection<RiskCard> playerCards) {
+    return IntStream
+        .concat(IntStream.of(RiskCard.WILDCARD), IntStream.rangeClosed(0, cardTypesWithoutJoker))
+        .boxed().
+            collect(Collectors.toMap(
+                i -> i,
+                i -> playerCards.stream().filter(c -> c.getCardType() == i)
+                    .collect(Collectors.toList())));
+  }
+
+  private Collection<Collection<RiskCard>> getTradeInOptionsAllOfOne(
+      Collection<RiskCard> playerCards) {
+    return getTradeInOptionsAllOfOne(mapToCardTypes(playerCards));
+  }
+
+  private Collection<Collection<RiskCard>> getTradeInOptionsAllOfOne(
+      Map<Integer, Collection<RiskCard>> separatedPlayerCards) {
+
+    List<Collection<RiskCard>> tradeInOptions = new ArrayList<>();
+
+    Collection<RiskCard> wildcards = separatedPlayerCards
+        .getOrDefault(RiskCard.WILDCARD, Collections.emptySet());
+    Collection<RiskCard> jokers = separatedPlayerCards
+        .getOrDefault(RiskCard.JOKER, Collections.emptySet());
+
+    final int wildcardsSize = wildcards.size();
+    final int jokersSize = jokers.size();
+
+    Stream<Entry<Integer, Collection<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
+        .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
+
+    if (wildcards.isEmpty() && jokers.isEmpty()) {
+      stream = stream.filter(e -> e.getValue().size() >= cardTypesWithoutJoker);
+    }
+
+    return stream.map(e -> {
+      Collection<Collection<RiskCard>> options = new ArrayList<>();
+
+      for (int c = 0; c < cardTypesWithoutJoker; c++) {
+        for (int i = c; i < (wildcardsSize + jokersSize); i++) {
+          Collection<RiskCard> option = new ArrayList<>();
+          for (int w = 0; w < wildcardsSize - i; w++) {
+            option.add(RiskCard.wildcard());
+          }
+          for (int j = i; j < jokersSize; j++) {
+            option.add(RiskCard.joker());
+          }
+        }
+      }
+
+      return options;
+    }).reduce(new ArrayList<>(), (a, b) -> {
+      a.addAll(b);
+      return a;
+    });
+  }
+
+  public Collection<RiskCard> getPlayerCards(int player) {
+    return Collections
+        .unmodifiableCollection(playerCards.getOrDefault(player, Collections.emptySet()));
+  }
 
   private int cardSlots() {
     return cardSlots(cardTypesWithoutJoker);

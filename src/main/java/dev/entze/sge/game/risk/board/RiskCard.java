@@ -10,6 +10,8 @@ public class RiskCard {
   public static final int ARTILLERY = 2;
   public static final int CAVALRY = 3;
 
+  public static final RiskCard wildcard = wildcard();
+  public static final RiskCard joker = joker();
 
   private final int cardType;
   private final int territoryId;
@@ -25,6 +27,14 @@ public class RiskCard {
 
   public int getTerritoryId() {
     return territoryId;
+  }
+
+  public static RiskCard wildcard() {
+    return new RiskCard(WILDCARD, WILDCARD);
+  }
+
+  public static RiskCard joker() {
+    return new RiskCard(JOKER, WILDCARD);
   }
 
   @Override
@@ -43,5 +53,15 @@ public class RiskCard {
   @Override
   public int hashCode() {
     return Objects.hash(cardType, territoryId);
+  }
+
+  @Override
+  public String toString() {
+    if (this.equals(wildcard)) {
+      return "*";
+    } else if (this.equals(joker)) {
+      return "J";
+    }
+    return cardType + "@" + territoryId;
   }
 }
