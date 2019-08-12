@@ -784,7 +784,7 @@ public class RiskBoard {
   }
 
   public List<Collection<RiskCard>> getTradeInOptions(Collection<RiskCard> playerCards) {
-    if(playerCards.size() < cardTypesWithoutJoker){
+    if (playerCards.size() < cardTypesWithoutJoker) {
       return Collections.emptyList();
     }
     List<Collection<RiskCard>> options = new ArrayList<>();
@@ -862,14 +862,14 @@ public class RiskBoard {
     Stream<Entry<Integer, Collection<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
         .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
 
-    Collection<Collection<RiskCard>> cards = stream.map(Entry::getValue)
+    Collection<Collection<RiskCard>> sepCards = stream.map(Entry::getValue)
         .collect(Collectors.toList());
 
-    if(cards.size() + wildcardsSize + jokersSize < cardTypesWithoutJoker){
+    if (sepCards.size() + wildcardsSize + jokersSize < cardTypesWithoutJoker) {
       return Collections.emptySet();
     }
 
-
+    Collection<Collection<RiskCard>> cards = new ArrayList<>();
 
     return null;
   }
