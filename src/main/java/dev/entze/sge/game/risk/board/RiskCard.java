@@ -4,6 +4,9 @@ import java.util.Objects;
 
 public class RiskCard {
 
+  private static int WILDCARD_TERRITORY = (-1);
+  private static int JOKER_TERRITORY = (-1);
+
   public static final int WILDCARD = (-1);
   public static final int JOKER = 0;
   public static final int INFANTRY = 1;
@@ -30,11 +33,11 @@ public class RiskCard {
   }
 
   public static RiskCard wildcard() {
-    return new RiskCard(WILDCARD, WILDCARD);
+    return new RiskCard(WILDCARD, ++WILDCARD_TERRITORY);
   }
 
   public static RiskCard joker() {
-    return new RiskCard(JOKER, WILDCARD);
+    return new RiskCard(JOKER, ++JOKER_TERRITORY);
   }
 
   @Override
@@ -58,10 +61,10 @@ public class RiskCard {
   @Override
   public String toString() {
     if (this.equals(wildcard)) {
-      return "*";
+      return "[*]";
     } else if (this.equals(joker)) {
-      return "J";
+      return "[J]";
     }
-    return cardType + "@" + territoryId;
+    return "[" + cardType + "@" + territoryId + "]";
   }
 }

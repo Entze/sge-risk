@@ -52,8 +52,6 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   public Risk(Risk risk) {
     this(risk.currentPlayerId, risk.canonical, risk.actionRecords, risk.board);
-    this.initialSelectMaybe = risk.initialSelectMaybe;
-    this.initialReinforceMaybe = risk.initialReinforceMaybe;
   }
 
   public Risk(int currentPlayerId, boolean canonical,
@@ -140,24 +138,21 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     return Collections.emptySet();
   }
 
-  private boolean initialSelectMaybe = true;
 
   private boolean isInitialSelect() {
-    if (initialSelectMaybe && (board.getTerritories().values().stream().anyMatch(
+    if (board.isInitialSelectMaybe() && (board.getTerritories().values().stream().anyMatch(
         t -> !(0 <= t.getOccupantPlayerId() && t.getOccupantPlayerId() < getNumberOfPlayers())))) {
       return true;
     }
-    initialSelectMaybe = false;
+    board.disableInitialSelectMaybe();
     return false;
   }
 
-  private boolean initialReinforceMaybe = true;
-
   private boolean isInitialReinforce() {
-    if (initialReinforceMaybe && board.areReinforcementsLeft()) {
+    if (board.isInitialReinforceMaybe() && board.areReinforcementsLeft()) {
       return true;
     }
-    initialReinforceMaybe = false;
+    board.disableInitialReinforceMaybe();
     return false;
   }
 
@@ -193,9 +188,13 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Set<RiskAction> actions = new HashSet<>();
     int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
 
-    /*if(board.canTradeInCards(currentPlayerId)){
+    if(board.hasToTradeInCards(currentPlayerId)){
+      board.getTradeInOptions(currentPlayerId);
+    }
 
-    }*/
+    if (board.couldTradeInCards(currentPlayerId)) {
+
+    }
 
     for (int r = 1; r <= reinforcementsLeft; r++) {
       int finalR = r;

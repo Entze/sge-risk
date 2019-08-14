@@ -61,7 +61,7 @@ public class RiskBoard {
   private final Set<RiskMission> allMissions;
   private final RiskMission[] playerMissions;
 
-  private final Map<Integer, Collection<RiskCard>> playerCards;
+  private final Map<Integer, List<RiskCard>> playerCards;
 
   private final Map<Integer, RiskContinent> continents;
 
@@ -73,9 +73,12 @@ public class RiskBoard {
   private boolean hasOccupiedCountry;
   private RiskPhase phase;
 
+  private boolean initialSelectMaybe;
+  private boolean initialReinforceMaybe;
+
   private final String map;
 
-  public RiskBoard(RiskConfiguration configuration, int numberOfPlayers) {
+  RiskBoard(RiskConfiguration configuration, int numberOfPlayers) {
     this.numberOfPlayers = numberOfPlayers;
     maxAttackerDice = configuration.getMaxAttackerDice();
     maxDefenderDice = configuration.getMaxDefenderDice();
@@ -216,10 +219,13 @@ public class RiskBoard {
 
     phase = RiskPhase.REINFORCEMENT;
 
+    initialSelectMaybe = true;
+    initialReinforceMaybe = true;
+
     map = configuration.getMap();
   }
 
-  public RiskBoard(RiskBoard riskBoard) {
+  RiskBoard(RiskBoard riskBoard) {
     this(riskBoard.numberOfPlayers, riskBoard.maxAttackerDice, riskBoard.maxDefenderDice,
         riskBoard.withCards, riskBoard.cardTypesWithoutJoker,
         riskBoard.reinforcementAtLeast, riskBoard.reinforcementThreshold,
@@ -232,6 +238,7 @@ public class RiskBoard {
         riskBoard.continents, riskBoard.nonDeployedReinforcements,
         riskBoard.involvedTroopsInAttacks, riskBoard.attackingId,
         riskBoard.defendingId, riskBoard.troops, riskBoard.hasOccupiedCountry, riskBoard.phase,
+        riskBoard.initialSelectMaybe, riskBoard.initialReinforceMaybe,
         riskBoard.map);
   }
 
@@ -246,10 +253,11 @@ public class RiskBoard {
       Map<Integer, ConnectivityInspector<Integer, DefaultEdge>> fortifyConnectivityInspector,
       Collection<RiskCard> deckOfCards, Set<RiskMission> allMissions,
       RiskMission[] playerMissions,
-      Map<Integer, Collection<RiskCard>> playerCards,
+      Map<Integer, List<RiskCard>> playerCards,
       Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements,
       Map<Integer, Integer> involvedTroopsInAttacks, int attackingId,
       int defendingId, int troops, boolean hasOccupiedCountry, RiskPhase phase,
+      boolean initialSelectMaybe, boolean initialReinforceMaybe,
       String map) {
     this.numberOfPlayers = numberOfPlayers;
     this.maxAttackerDice = maxAttackerDice;
@@ -311,6 +319,8 @@ public class RiskBoard {
     this.troops = troops;
     this.hasOccupiedCountry = hasOccupiedCountry;
     this.phase = phase;
+    this.initialSelectMaybe = initialSelectMaybe;
+    this.initialReinforceMaybe = initialReinforceMaybe;
     this.map = map;
   }
 
@@ -354,6 +364,22 @@ public class RiskBoard {
       Map<Integer, RiskTerritory> territories) {
     return territories.keySet().stream().collect(Collectors
         .toMap(i -> i, i -> new RiskTerritory(territories.get(i)), (a, b) -> b));
+  }
+
+  boolean isInitialSelectMaybe() {
+    return initialSelectMaybe;
+  }
+
+  boolean isInitialReinforceMaybe() {
+    return initialReinforceMaybe;
+  }
+
+  void disableInitialSelectMaybe() {
+    initialSelectMaybe = false;
+  }
+
+  void disableInitialReinforceMaybe() {
+    initialReinforceMaybe = false;
   }
 
   void initialSelect(int selected, int playerId) {
@@ -758,6 +784,10 @@ public class RiskBoard {
     return hasCorrectCards;
   }
 
+  public boolean couldTradeInCards(int player) {
+    return PriestLogic.possible(canTradeInCards(player));
+  }
+
   public boolean hasToTradeInCards(int player) {
     return playerCards.containsKey(player)
         && playerCards.get(player).size() >= cardSlots();
@@ -783,18 +813,27 @@ public class RiskBoard {
         .anyMatch(e -> e.getValue() + numberOfJokers >= cardTypesWithoutJoker);
   }
 
-  public List<Collection<RiskCard>> getTradeInOptions(Collection<RiskCard> playerCards) {
+  List<List<RiskCard>> getTradeInOptions(int player) {
+    return getTradeInOptions(playerCards.getOrDefault(player, Collections.emptyList()));
+  }
+
+  private List<List<RiskCard>> getTradeInOptions(Collection<RiskCard> playerCards) {
     if (playerCards.size() < cardTypesWithoutJoker) {
       return Collections.emptyList();
     }
-    List<Collection<RiskCard>> options = new ArrayList<>();
-    Map<Integer, Collection<RiskCard>> separatedPlayerCards = mapToCardTypes(playerCards);
+    List<List<RiskCard>> options = new ArrayList<>();
+    Map<Integer, List<RiskCard>> separatedPlayerCards = mapToCardTypes(playerCards);
+    if (separatedPlayerCards.getOrDefault(RiskCard.WILDCARD, Collections.emptyList()).size()
+        + separatedPlayerCards.getOrDefault(RiskCard.JOKER, Collections.emptyList()).size()
+        == playerCards.size()) {
+      return List.of(List.copyOf(playerCards));
+    }
     options.addAll(getTradeInOptionsAllOfOne(separatedPlayerCards));
     options.addAll(getTradeInOptionsOneOfAll(separatedPlayerCards));
     return options;
   }
 
-  private Map<Integer, Collection<RiskCard>> mapToCardTypes(
+  private Map<Integer, List<RiskCard>> mapToCardTypes(
       final Collection<RiskCard> playerCards) {
     return IntStream
         .concat(IntStream.of(RiskCard.WILDCARD), IntStream.rangeClosed(0, cardTypesWithoutJoker))
@@ -805,23 +844,23 @@ public class RiskBoard {
                     .collect(Collectors.toList())));
   }
 
-  private Collection<Collection<RiskCard>> getTradeInOptionsAllOfOne(
+  private Collection<List<RiskCard>> getTradeInOptionsAllOfOne(
       Collection<RiskCard> playerCards) {
     return getTradeInOptionsAllOfOne(mapToCardTypes(playerCards));
   }
 
-  private Collection<Collection<RiskCard>> getTradeInOptionsAllOfOne(
-      Map<Integer, Collection<RiskCard>> separatedPlayerCards) {
+  private Collection<List<RiskCard>> getTradeInOptionsAllOfOne(
+      Map<Integer, List<RiskCard>> separatedPlayerCards) {
 
     Collection<RiskCard> wildcards = separatedPlayerCards
-        .getOrDefault(RiskCard.WILDCARD, Collections.emptySet());
+        .getOrDefault(RiskCard.WILDCARD, Collections.emptyList());
     Collection<RiskCard> jokers = separatedPlayerCards
-        .getOrDefault(RiskCard.JOKER, Collections.emptySet());
+        .getOrDefault(RiskCard.JOKER, Collections.emptyList());
 
     final int wildcardsSize = wildcards.size();
     final int jokersSize = jokers.size();
 
-    Stream<Entry<Integer, Collection<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
+    Stream<Entry<Integer, List<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
         .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
 
     stream = stream
@@ -835,48 +874,103 @@ public class RiskBoard {
       e.addAll(jokers);
     });
 
-    Collection<Collection<RiskCard>> tradeInOptions = new ArrayList<>();
+    Collection<List<RiskCard>> tradeInOptions = new ArrayList<>();
     for (Collection<RiskCard> riskCards : cards) {
-      tradeInOptions.addAll(Util.combinations(riskCards, cardTypesWithoutJoker));
+      tradeInOptions.addAll(
+          Util.combinations(riskCards, cardTypesWithoutJoker).stream().map(Util::asList).collect(
+              Collectors.toList()));
     }
 
     return tradeInOptions;
   }
 
-  private Collection<Collection<RiskCard>> getTradeInOptionsOneOfAll(
+  private Collection<List<RiskCard>> getTradeInOptionsOneOfAll(
       Collection<RiskCard> playerCards) {
     return getTradeInOptionsOneOfAll(mapToCardTypes(playerCards));
   }
 
-  private Collection<Collection<RiskCard>> getTradeInOptionsOneOfAll(
-      Map<Integer, Collection<RiskCard>> separatedPlayerCards) {
 
-    Collection<RiskCard> wildcards = separatedPlayerCards
-        .getOrDefault(RiskCard.WILDCARD, Collections.emptySet());
-    Collection<RiskCard> jokers = separatedPlayerCards
-        .getOrDefault(RiskCard.JOKER, Collections.emptySet());
+  private Collection<List<RiskCard>> getTradeInOptionsOneOfAll(
+      Map<Integer, List<RiskCard>> separatedPlayerCards) {
+
+    List<RiskCard> wildcards = separatedPlayerCards
+        .getOrDefault(RiskCard.WILDCARD, Collections.emptyList());
+    List<RiskCard> jokers = separatedPlayerCards
+        .getOrDefault(RiskCard.JOKER, Collections.emptyList());
 
     final int wildcardsSize = wildcards.size();
     final int jokersSize = jokers.size();
 
-    Stream<Entry<Integer, Collection<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
+    Stream<Entry<Integer, List<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
         .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
 
-    Collection<Collection<RiskCard>> sepCards = stream.map(Entry::getValue)
+    List<List<RiskCard>> sepCards = stream.map(e -> Util.asList(e.getValue()))
         .collect(Collectors.toList());
 
-    if (sepCards.size() + wildcardsSize + jokersSize < cardTypesWithoutJoker) {
+    final int sepCardsSize = sepCards.size();
+    if (sepCardsSize + wildcardsSize + jokersSize < cardTypesWithoutJoker) {
       return Collections.emptySet();
     }
 
-    Collection<Collection<RiskCard>> cards = new ArrayList<>();
+    if (sepCardsSize + jokersSize <= 0) {
+      return List.of(wildcards);
+    }
 
-    return null;
+    int[] sizes = sepCards.stream().mapToInt(Collection::size).toArray();
+    final int m = Arrays.stream(sizes).max().orElse(0);
+    final int r = m + (jokersSize > 0 ? 1 : 0) + (wildcardsSize > 0 ? 1 : 0);
+    final int j = m + 1;
+    final int w = m + 2;
+
+    int[] indices = new int[cardTypesWithoutJoker];
+    Arrays.fill(indices, 0);
+
+    Collection<List<RiskCard>> options = new ArrayList<>();
+    Collection<RiskCard> option = new ArrayList<>(cardTypesWithoutJoker);
+
+    do {
+      option.clear();
+
+      for (int index : indices) {
+        if (index == j) {
+          option.add(RiskCard.joker);
+        } else if (index == w) {
+          option.add(RiskCard.wildcard);
+        } else {
+          option.add(sepCards.get(option.size()).get(index));
+        }
+      }
+
+      options.add(List.copyOf(option));
+
+      //skips permutations which are not possible (due to being out of range or not enough cards)
+      do {
+        indices = Util.permutations(indices, r);
+      } while (!Util.allEqualTo(indices, 0) && !allInRange(indices, sizes, j, w)
+          && (Util.numberOfEqualTo(indices, j) > jokersSize
+          || Util.numberOfEqualTo(indices, w) > wildcardsSize));
+
+    } while (!Util.allEqualTo(indices, 0));
+
+    return options;
   }
 
-  public Collection<RiskCard> getPlayerCards(int player) {
+  private static boolean allInRange(int[] array, int[] sizes, int j, int w) {
+    if (array.length < sizes.length) {
+      return false;
+    }
+
+    for (int i = 0; i < array.length; i++) {
+      if (array[i] > sizes[i] && array[i] != j && array[i] != w) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public List<RiskCard> getPlayerCards(int player) {
     return Collections
-        .unmodifiableCollection(playerCards.getOrDefault(player, Collections.emptySet()));
+        .unmodifiableList(playerCards.getOrDefault(player, Collections.emptyList()));
   }
 
   private int cardSlots() {
