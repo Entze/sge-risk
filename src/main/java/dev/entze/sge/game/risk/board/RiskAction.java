@@ -1,6 +1,9 @@
 package dev.entze.sge.game.risk.board;
 
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RiskAction {
 
@@ -60,8 +63,24 @@ public class RiskAction {
         attacker | (defender << (Integer.SIZE / 2)));
   }
 
-  public static RiskAction playCard(int id) {
+  public static RiskAction cardSlots(int id) {
     return new RiskAction(CARD_ID, CARD_ID, id);
+  }
+
+  public static RiskAction playCards(int... ids) {
+    int value = 0;
+    for (int id : ids) {
+      value |= (1 << id);
+    }
+    return new RiskAction(CARD_ID, CARD_ID, value);
+  }
+
+  public static RiskAction playCards(Iterable<Integer> ids) {
+    int value = 0;
+    for (int id : ids) {
+      value |= (1 << id);
+    }
+    return new RiskAction(CARD_ID, CARD_ID, value);
   }
 
   public int selected() {
@@ -84,8 +103,10 @@ public class RiskAction {
     return value;
   }
 
-  public int cardId() {
-    return value;
+  public Set<Integer> playedCards() {
+    return IntStream.range(0, Integer.SIZE - Integer.numberOfLeadingZeros(value))
+        .filter(i -> ((value & (1 << i)) >>> i) != 0)
+        .boxed().collect(Collectors.toSet());
   }
 
   public int fortifyingId() {
@@ -142,7 +163,7 @@ public class RiskAction {
     }
 
     if (srcId == targetId && srcId == CARD_ID) {
-      return "C" + value;
+      return "C" + playedCards().toString();
     }
 
     if (srcId == -1) {

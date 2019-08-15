@@ -349,6 +349,8 @@ public class RiskTest {
 
   }
 
+  //TODO: test trade in of cards
+
   @Test
   public void test_game_doAction_reinforce_err_1() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);

@@ -813,6 +813,19 @@ public class RiskBoard {
         .anyMatch(e -> e.getValue() + numberOfJokers >= cardTypesWithoutJoker);
   }
 
+  Set<Integer> getTradeInOptionSlots(int player) {
+    List<RiskCard> playerCards = this.playerCards.getOrDefault(player, Collections.emptyList());
+    List<List<RiskCard>> tradeInOptions = getTradeInOptions(playerCards);
+
+    return tradeInOptions.stream().map(l -> {
+      int n = 0;
+      for (RiskCard riskCard : l) {
+        n |= 1 << (playerCards.indexOf(riskCard));
+      }
+      return n;
+    }).collect(Collectors.toSet());
+  }
+
   List<List<RiskCard>> getTradeInOptions(int player) {
     return getTradeInOptions(playerCards.getOrDefault(player, Collections.emptyList()));
   }
@@ -826,7 +839,8 @@ public class RiskBoard {
     if (separatedPlayerCards.getOrDefault(RiskCard.WILDCARD, Collections.emptyList()).size()
         + separatedPlayerCards.getOrDefault(RiskCard.JOKER, Collections.emptyList()).size()
         == playerCards.size()) {
-      return List.of(List.copyOf(playerCards));
+      return Util.combinations(playerCards, numberOfPlayers).stream().map(Util::asList)
+          .collect(Collectors.toList());
     }
     options.addAll(getTradeInOptionsAllOfOne(separatedPlayerCards));
     options.addAll(getTradeInOptionsOneOfAll(separatedPlayerCards));

@@ -188,19 +188,18 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Set<RiskAction> actions = new HashSet<>();
     int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
 
-    if(board.hasToTradeInCards(currentPlayerId)){
-      board.getTradeInOptions(currentPlayerId);
-    }
-
     if (board.couldTradeInCards(currentPlayerId)) {
-
+      for (Integer slots : board.getTradeInOptionSlots(currentPlayerId)) {
+        actions.add(RiskAction.cardSlots(slots));
+      }
     }
-
-    for (int r = 1; r <= reinforcementsLeft; r++) {
-      int finalR = r;
-      actions.addAll(board.getTerritories().entrySet().stream()
-          .filter(t -> t.getValue().getOccupantPlayerId() == currentPlayerId)
-          .map(t -> RiskAction.reinforce(t.getKey(), finalR)).collect(Collectors.toSet()));
+    if (actions.isEmpty() || !board.hasToTradeInCards(currentPlayerId)) {
+      for (int r = 1; r <= reinforcementsLeft; r++) {
+        final int finalR = r;
+        actions.addAll(board.getTerritories().entrySet().stream()
+            .filter(t -> t.getValue().getOccupantPlayerId() == currentPlayerId)
+            .map(t -> RiskAction.reinforce(t.getKey(), finalR)).collect(Collectors.toSet()));
+      }
     }
     return actions;
   }

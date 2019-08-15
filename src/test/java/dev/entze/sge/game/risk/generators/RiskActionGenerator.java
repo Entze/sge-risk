@@ -26,7 +26,7 @@ public class RiskActionGenerator extends Generator<RiskAction> {
     } else if (roll == 4) {
       action = RiskAction.occupy(random.nextInt());
     } else if (roll == 5) {
-      action = RiskAction.playCard(random.nextInt());
+      action = RiskAction.cardSlots(random.nextInt());
     } else if (roll == 6) {
       action = RiskAction.reinforce(random.nextInt(), random.nextInt());
     } else if (roll == 7) {
