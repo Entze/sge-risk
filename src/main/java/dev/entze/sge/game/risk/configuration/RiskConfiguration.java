@@ -311,6 +311,14 @@ public class RiskConfiguration {
     }
   }
 
+  public int getMaxExtraBonus() {
+    return maxExtraBonus;
+  }
+
+  public void setMaxExtraBonus(int maxExtraBonus) {
+    this.maxExtraBonus = maxExtraBonus;
+  }
+
   public int getMaxNumberOfPlayers() {
     return maxNumberOfPlayers;
   }
@@ -463,6 +471,7 @@ public class RiskConfiguration {
         getMaxAttackerDice() == that.getMaxAttackerDice() &&
         getMaxDefenderDice() == that.getMaxDefenderDice() &&
         isWithCards() == that.isWithCards() &&
+        getMaxExtraBonus() == that.getMaxExtraBonus() &&
         getCardTypesWithoutJoker() == that.getCardTypesWithoutJoker() &&
         getNumberOfJokers() == that.getNumberOfJokers() &&
         isChooseInitialTerritories() == that.isChooseInitialTerritories() &&
@@ -473,22 +482,24 @@ public class RiskConfiguration {
         isFortifyOnlyWithNonFightingArmies() == that.isFortifyOnlyWithNonFightingArmies() &&
         isWithMissions() == that.isWithMissions() &&
         Arrays.equals(getInitialTroops(), that.getInitialTroops()) &&
-        getMissions().equals(that.getMissions()) &&
-        getContinents().equals(that.getContinents()) &&
-        getTerritories().equals(that.getTerritories()) &&
-        getMap().equals(that.getMap());
+        Arrays.equals(getTradeInBonus(), that.getTradeInBonus()) &&
+        Objects.equals(getMissions(), that.getMissions()) &&
+        Objects.equals(getContinents(), that.getContinents()) &&
+        Objects.equals(getTerritories(), that.getTerritories()) &&
+        Objects.equals(getMap(), that.getMap());
   }
 
   @Override
   public int hashCode() {
     int result = Objects
         .hash(getMaxNumberOfPlayers(), getMaxAttackerDice(), getMaxDefenderDice(), isWithCards(),
-            getCardTypesWithoutJoker(), getNumberOfJokers(), isChooseInitialTerritories(),
-            getReinforcementAtLeast(), getReinforcementThreshold(),
-            isOccupyOnlyWithAttackingArmies(),
-            isFortifyOnlyFromSingleTerritory(), isFortifyOnlyWithNonFightingArmies(),
-            isWithMissions(), getMissions(), getContinents(), getTerritories(), getMap());
+            getMaxExtraBonus(), getCardTypesWithoutJoker(), getNumberOfJokers(),
+            isChooseInitialTerritories(), getReinforcementAtLeast(), getReinforcementThreshold(),
+            isOccupyOnlyWithAttackingArmies(), isFortifyOnlyFromSingleTerritory(),
+            isFortifyOnlyWithNonFightingArmies(), isWithMissions(), getMissions(), getContinents(),
+            getTerritories(), getMap());
     result = 31 * result + Arrays.hashCode(getInitialTroops());
+    result = 31 * result + Arrays.hashCode(getTradeInBonus());
     return result;
   }
 }

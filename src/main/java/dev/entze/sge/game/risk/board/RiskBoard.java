@@ -41,6 +41,9 @@ public class RiskBoard {
   private final int maxDefenderDice;
 
   private final boolean withCards;
+  private final int[] tradeInBonus;
+  private final int maxExtraBonus;
+  private int tradeIns;
   private final int cardTypesWithoutJoker;
 
   private final int reinforcementAtLeast;
@@ -139,7 +142,11 @@ public class RiskBoard {
       }
     }
 
+    tradeIns = 0;
     if (withCards) {
+      tradeInBonus = configuration.getTradeInBonus();
+      maxExtraBonus = configuration.getMaxExtraBonus();
+
       List<RiskCard> cardList = territoriesConfiguration.stream().map(
           territoryConfiguration -> new RiskCard(territoryConfiguration.getCardType(),
               territoryConfiguration.getTerritoryId()))
@@ -154,6 +161,8 @@ public class RiskBoard {
           .toUnmodifiableMap(p -> p, p -> new ArrayList<>(cardSlots())));
 
     } else {
+      tradeInBonus = null;
+      maxExtraBonus = 0;
       deckOfCards = null;
       playerCards = null;
     }
@@ -225,7 +234,8 @@ public class RiskBoard {
 
   RiskBoard(RiskBoard riskBoard) {
     this(riskBoard.numberOfPlayers, riskBoard.maxAttackerDice, riskBoard.maxDefenderDice,
-        riskBoard.withCards, riskBoard.cardTypesWithoutJoker,
+        riskBoard.withCards, riskBoard.tradeInBonus, riskBoard.maxExtraBonus, riskBoard.tradeIns,
+        riskBoard.cardTypesWithoutJoker,
         riskBoard.reinforcementAtLeast, riskBoard.reinforcementThreshold,
         riskBoard.occupyOnlyWithAttackingArmies, riskBoard.fortifyOnlyFromSingleTerritory,
         riskBoard.fortifyOnlyWithNonFightingArmies, riskBoard.withMissions,
@@ -241,7 +251,7 @@ public class RiskBoard {
   }
 
   private RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice,
-      boolean withCards,
+      boolean withCards, int[] tradeInBonus, int maxExtraBonus, int tradeIns,
       int cardTypesWithoutJoker, int reinforcementAtLeast,
       int reinforcementThreshold, boolean occupyOnlyWithAttackingArmies,
       boolean fortifyOnlyFromSingleTerritory, boolean fortifyOnlyWithNonFightingArmies,
@@ -261,6 +271,9 @@ public class RiskBoard {
     this.maxAttackerDice = maxAttackerDice;
     this.maxDefenderDice = maxDefenderDice;
     this.withCards = withCards;
+    this.tradeInBonus = tradeInBonus;
+    this.maxExtraBonus = maxExtraBonus;
+    this.tradeIns = tradeIns;
     this.cardTypesWithoutJoker = cardTypesWithoutJoker;
     this.reinforcementAtLeast = reinforcementAtLeast;
     this.reinforcementThreshold = reinforcementThreshold;
@@ -847,19 +860,33 @@ public class RiskBoard {
         && playerCards.get(player).size() >= cardSlots();
   }
 
+  private boolean hasOneOfEach(Iterable<RiskCard> cards) {
+    return hasOneOfEach(numberOfCards(cards));
+  }
+
+  private boolean hasAllOfOne(Iterable<RiskCard> cards) {
+    return hasAllOfOne(numberOfCards(cards));
+  }
+
+  private Map<Integer, Integer> numberOfCards(Iterable<RiskCard> cards) {
+    Map<Integer, Integer> numberOfCards = new HashMap<>();
+    for (RiskCard card : cards) {
+      numberOfCards.compute(card.getCardType(), (k, v) -> v == null ? 1 : v + 1);
+    }
+    return numberOfCards;
+  }
+
   private boolean hasOneOfEach(Map<Integer, Integer> numberOfCards) {
     final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
     return numberOfCards.entrySet().stream().filter(
         e -> e.getValue() > 0
             && e.getKey() != RiskCard.JOKER
             && e.getKey() != RiskCard.WILDCARD)
-        .count()
-        + numberOfJokers >= cardTypesWithoutJoker;
+        .count() + numberOfJokers >= cardTypesWithoutJoker;
   }
 
   private boolean hasAllOfOne(Map<Integer, Integer> numberOfCards) {
     final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
-
     return numberOfCards.entrySet().stream().filter(
         e -> e.getValue() > 0
             && e.getKey() != RiskCard.JOKER
@@ -1034,6 +1061,49 @@ public class RiskBoard {
   private int cardSlots(int cardTypesWithoutJoker) {
     cardTypesWithoutJoker--;
     return cardTypesWithoutJoker * cardTypesWithoutJoker + 1;
+  }
+
+  public int getTradeInBonus(int n) {
+    if (n < 0) {
+      return 0;
+    }
+    if (n >= tradeInBonus.length) {
+      return tradeInBonus[tradeInBonus.length - 1] + (n - tradeInBonus.length + 1)
+          * maxExtraBonus;
+    }
+    return tradeInBonus[n];
+  }
+
+  public int getTradeInBonus() {
+    return getTradeInBonus(tradeIns);
+  }
+
+  boolean canTradeInCardIds(final int player, Set<Integer> cards) {
+    final List<RiskCard> playerCards = this.playerCards
+        .getOrDefault(player, Collections.emptyList());
+    final int cardsInHand = playerCards.size();
+    if (cards.size() != cardTypesWithoutJoker || cards.stream().anyMatch(c -> c >= cardsInHand)) {
+      return false;
+    }
+    List<RiskCard> toTradeIn = cards.stream().map(playerCards::get).collect(Collectors.toList());
+    Map<Integer, Integer> numberOfCards = numberOfCards(toTradeIn);
+
+    final int numberOfWildcards = numberOfCards.getOrDefault(RiskCard.WILDCARD, 0);
+    final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
+    return numberOfCards.entrySet().stream()
+        .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER)
+        .map(Entry::getValue)
+        .anyMatch(v -> v + numberOfWildcards + numberOfJokers == cardTypesWithoutJoker)
+        || numberOfCards.keySet().stream()
+        .filter(k -> k != RiskCard.WILDCARD && k != RiskCard.JOKER).distinct().count()
+        + numberOfWildcards + numberOfJokers
+        == cardTypesWithoutJoker;
+  }
+
+  void drawCardIfPossible(int player) {
+    if (withCards && hasOccupiedCountry && playerCards.containsKey(player)) {
+      playerCards.get(player).add(deckOfCards.pop());
+    }
   }
 
   private enum RiskPhase {

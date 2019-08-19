@@ -657,6 +657,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private void endMove() {
+    this.board.drawCardIfPossible(this.currentPlayerId);
     this.currentPlayerId = nextPlayerId();
     this.board.endMove(this.currentPlayerId);
   }
