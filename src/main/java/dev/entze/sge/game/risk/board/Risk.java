@@ -23,12 +23,11 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   private final static int MISSION_FULFILLED_PLAYER = -3;
 
   private final boolean canonical;
+  private final Dice attackerDice;
+  private final Dice defenderDice;
   private int currentPlayerId;
   private List<ActionRecord<RiskAction>> actionRecords;
   private RiskBoard board;
-
-  private final Dice attackerDice;
-  private final Dice defenderDice;
 
   public Risk() {
     this(RiskConfiguration.RISK_DEFAULT_CONFIG, 2);
@@ -67,6 +66,60 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     this.attackerDice = new Dice(board.getMaxAttackerDice());
     this.defenderDice = new Dice(board.getMaxDefenderDice());
+  }
+
+  private static Set<RiskAction> possibleCasualties(final int attackerDice,
+      final int defenderDice) {
+    final int dice = Math.min(attackerDice, defenderDice);
+    return IntStream.rangeClosed(0, dice)
+        .mapToObj(die -> RiskAction.casualties(die, dice - die)).collect(Collectors.toSet());
+  }
+
+  private static char decreaseLexicographical(char c) {
+    if (c == '0') {
+      return c;
+    }
+    if (c == 'a') {
+      return '9';
+    }
+
+    return --c;
+  }
+
+  private static char increaseLexicographical(char c) {
+    if (c == 'z') {
+      return 'z';
+    }
+    if (c == '9') {
+      return 'a';
+    }
+
+    return ++c;
+  }
+
+  private static String whitespace(char c) {
+    if ('a' <= c) {
+      return whitespace((c - 'a') + 10);
+    }
+    return whitespace(c - '0');
+  }
+
+  private static String whitespace(int n) {
+    String ret = "";
+    for (int i = 0; i < n; i++) {
+      ret = ret.concat(" ");
+    }
+
+    return ret;
+  }
+
+  private static Risk stripOutUnknownInformation(Risk game) {
+    return game;
+  }
+
+  private static Risk stripOutUnknownInformation(Risk game, int player) {
+    Risk next = stripOutUnknownInformation(game);
+    return next;
   }
 
   @Override
@@ -137,7 +190,6 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     return Collections.emptySet();
   }
-
 
   private boolean isInitialSelect() {
     if (board.isInitialSelectMaybe() && (board.getTerritories().values().stream().anyMatch(
@@ -246,13 +298,6 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     return actions;
-  }
-
-  private static Set<RiskAction> possibleCasualties(final int attackerDice,
-      final int defenderDice) {
-    final int dice = Math.min(attackerDice, defenderDice);
-    return IntStream.rangeClosed(0, dice)
-        .mapToObj(die -> RiskAction.casualties(die, dice - die)).collect(Collectors.toSet());
   }
 
   @Override
@@ -742,53 +787,6 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     return map.toString();
-  }
-
-  private static char decreaseLexicographical(char c) {
-    if (c == '0') {
-      return c;
-    }
-    if (c == 'a') {
-      return '9';
-    }
-
-    return --c;
-  }
-
-  private static char increaseLexicographical(char c) {
-    if (c == 'z') {
-      return 'z';
-    }
-    if (c == '9') {
-      return 'a';
-    }
-
-    return ++c;
-  }
-
-  private static String whitespace(char c) {
-    if ('a' <= c) {
-      return whitespace((c - 'a') + 10);
-    }
-    return whitespace(c - '0');
-  }
-
-  private static String whitespace(int n) {
-    String ret = "";
-    for (int i = 0; i < n; i++) {
-      ret = ret.concat(" ");
-    }
-
-    return ret;
-  }
-
-  private static Risk stripOutUnknownInformation(Risk game) {
-    return game;
-  }
-
-  private static Risk stripOutUnknownInformation(Risk game, int player) {
-    Risk next = stripOutUnknownInformation(game);
-    return next;
   }
 
 }

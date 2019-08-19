@@ -67,16 +67,14 @@ public class RiskBoard {
 
   private final int[] nonDeployedReinforcements;
   private final Map<Integer, Integer> involvedTroopsInAttacks;
+  private final String map;
   private int attackingId;
   private int defendingId;
   private int troops;
   private boolean hasOccupiedCountry;
   private RiskPhase phase;
-
   private boolean initialSelectMaybe;
   private boolean initialReinforceMaybe;
-
-  private final String map;
 
   RiskBoard(RiskConfiguration configuration, int numberOfPlayers) {
     this.numberOfPlayers = numberOfPlayers;
@@ -324,6 +322,68 @@ public class RiskBoard {
     this.map = map;
   }
 
+  private static Map<Integer, RiskTerritory> copyTerritories(
+      Map<Integer, RiskTerritory> territories) {
+    return territories.keySet().stream().collect(Collectors
+        .toMap(i -> i, i -> new RiskTerritory(territories.get(i)), (a, b) -> b));
+  }
+
+  private static boolean allInRange(int[] array, int[] sizes, int j, int w) {
+    if (array.length < sizes.length) {
+      return false;
+    }
+
+    for (int i = 0; i < array.length; i++) {
+      if (array[i] > sizes[i] && array[i] != j && array[i] != w) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static void selectRandomMissions(List<RiskMission> missionList,
+      RiskMission[] playerMissions) {
+    Optional<RiskMission> fallbackOptional = missionList.stream()
+        .filter(m -> m.getRiskMissionType() == RiskMissionType.OCCUPY_TERRITORY).findFirst();
+
+    if (fallbackOptional.isEmpty()) {
+      System.err
+          .println("Warning: No fallback (any OCCUPY_TERRITORY) mission could be determined."
+              + " Mission-dealing could take a while");
+
+      if (missionList.size() < playerMissions.length) {
+        throw new IllegalArgumentException("More players then missions");
+      }
+    } else {
+      for (int i = missionList.size() - 1; i < playerMissions.length; i++) {
+        missionList.add(fallbackOptional.get());
+      }
+    }
+
+    boolean playerLiberateThemselves;
+    do {
+      playerLiberateThemselves = false;
+      Collections.shuffle(missionList);
+      for (int i = 0; i < playerMissions.length; i++) {
+        RiskMission riskMission = missionList.get(i);
+        playerMissions[i] = riskMission;
+        playerLiberateThemselves = playerLiberateThemselves
+            || (riskMission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
+            && riskMission.getTargetIds().contains(i));
+      }
+    } while (fallbackOptional.isEmpty() && playerLiberateThemselves);
+
+    if (fallbackOptional.isPresent() && playerLiberateThemselves) {
+      for (int i = 0; i < playerMissions.length; i++) {
+        if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
+            && playerMissions[i].getTargetIds().contains(i)) {
+          playerMissions[i] = fallbackOptional.get();
+        }
+      }
+    }
+
+  }
+
   public int getNumberOfPlayers() {
     return numberOfPlayers;
   }
@@ -358,12 +418,6 @@ public class RiskBoard {
 
   String getMap() {
     return map;
-  }
-
-  private static Map<Integer, RiskTerritory> copyTerritories(
-      Map<Integer, RiskTerritory> territories) {
-    return territories.keySet().stream().collect(Collectors
-        .toMap(i -> i, i -> new RiskTerritory(territories.get(i)), (a, b) -> b));
   }
 
   boolean isInitialSelectMaybe() {
@@ -903,7 +957,6 @@ public class RiskBoard {
     return getTradeInOptionsOneOfAll(mapToCardTypes(playerCards));
   }
 
-
   private Collection<List<RiskCard>> getTradeInOptionsOneOfAll(
       Map<Integer, List<RiskCard>> separatedPlayerCards) {
 
@@ -969,19 +1022,6 @@ public class RiskBoard {
     return options;
   }
 
-  private static boolean allInRange(int[] array, int[] sizes, int j, int w) {
-    if (array.length < sizes.length) {
-      return false;
-    }
-
-    for (int i = 0; i < array.length; i++) {
-      if (array[i] > sizes[i] && array[i] != j && array[i] != w) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   public List<RiskCard> getPlayerCards(int player) {
     return Collections
         .unmodifiableList(playerCards.getOrDefault(player, Collections.emptyList()));
@@ -1001,49 +1041,6 @@ public class RiskBoard {
     ATTACK,
     OCCUPY,
     FORTIFY,
-  }
-
-  private static void selectRandomMissions(List<RiskMission> missionList,
-      RiskMission[] playerMissions) {
-    Optional<RiskMission> fallbackOptional = missionList.stream()
-        .filter(m -> m.getRiskMissionType() == RiskMissionType.OCCUPY_TERRITORY).findFirst();
-
-    if (fallbackOptional.isEmpty()) {
-      System.err
-          .println("Warning: No fallback (any OCCUPY_TERRITORY) mission could be determined."
-              + " Mission-dealing could take a while");
-
-      if (missionList.size() < playerMissions.length) {
-        throw new IllegalArgumentException("More players then missions");
-      }
-    } else {
-      for (int i = missionList.size() - 1; i < playerMissions.length; i++) {
-        missionList.add(fallbackOptional.get());
-      }
-    }
-
-    boolean playerLiberateThemselves;
-    do {
-      playerLiberateThemselves = false;
-      Collections.shuffle(missionList);
-      for (int i = 0; i < playerMissions.length; i++) {
-        RiskMission riskMission = missionList.get(i);
-        playerMissions[i] = riskMission;
-        playerLiberateThemselves = playerLiberateThemselves
-            || (riskMission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
-            && riskMission.getTargetIds().contains(i));
-      }
-    } while (fallbackOptional.isEmpty() && playerLiberateThemselves);
-
-    if (fallbackOptional.isPresent() && playerLiberateThemselves) {
-      for (int i = 0; i < playerMissions.length; i++) {
-        if (playerMissions[i].getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER
-            && playerMissions[i].getTargetIds().contains(i)) {
-          playerMissions[i] = fallbackOptional.get();
-        }
-      }
-    }
-
   }
 
 }

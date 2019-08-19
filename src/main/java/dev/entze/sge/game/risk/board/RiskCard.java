@@ -4,16 +4,14 @@ import java.util.Objects;
 
 public class RiskCard {
 
-  private static int WILDCARD_TERRITORY = (-1);
-  private static int JOKER_TERRITORY = (-1);
-
   public static final int WILDCARD = (-1);
   public static final int JOKER = 0;
   public static final int INFANTRY = 1;
   public static final int ARTILLERY = 2;
   public static final int CAVALRY = 3;
-
+  private static int WILDCARD_TERRITORY = (-1);
   public static final RiskCard wildcard = wildcard();
+  private static int JOKER_TERRITORY = (-1);
   public static final RiskCard joker = joker();
 
   private final int cardType;
@@ -24,20 +22,20 @@ public class RiskCard {
     this.territoryId = territoryId;
   }
 
-  public int getCardType() {
-    return cardType;
-  }
-
-  public int getTerritoryId() {
-    return territoryId;
-  }
-
   public static RiskCard wildcard() {
     return new RiskCard(WILDCARD, ++WILDCARD_TERRITORY);
   }
 
   public static RiskCard joker() {
     return new RiskCard(JOKER, ++JOKER_TERRITORY);
+  }
+
+  public int getCardType() {
+    return cardType;
+  }
+
+  public int getTerritoryId() {
+    return territoryId;
   }
 
   @Override

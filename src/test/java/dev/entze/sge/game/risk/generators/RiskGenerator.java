@@ -3,9 +3,9 @@ package dev.entze.sge.game.risk.generators;
 import com.pholser.junit.quickcheck.generator.GenerationStatus;
 import com.pholser.junit.quickcheck.generator.Generator;
 import com.pholser.junit.quickcheck.random.SourceOfRandomness;
+import dev.entze.sge.game.risk.Util;
 import dev.entze.sge.game.risk.board.Risk;
 import dev.entze.sge.game.risk.board.RiskAction;
-import dev.entze.sge.game.risk.Util;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import java.util.Set;
 
