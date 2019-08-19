@@ -71,7 +71,7 @@ public class RiskConfiguration {
   public static final RiskConfiguration RISK_DEFAULT_CONFIG = new RiskConfiguration(6,
       3, 2,
       new int[] {50, 35, 30, 25, 20},
-      true, 3, 2,
+      true, new int[] {4, 6, 8, 10, 12, 15}, 5, 3, 2,
       true,
       3, 3,
       false, true, false, true,
@@ -168,13 +168,14 @@ public class RiskConfiguration {
       + "zq+zzzzn"
 
   );
-
-
+  private static Yaml riskConfigurationYaml = null;
   private int maxNumberOfPlayers = 2;
   private int maxAttackerDice = 3;
   private int maxDefenderDice = 2;
   private int[] initialTroops = null;
   private boolean withCards = true;
+  private int[] tradeInBonus = null;
+  private int maxExtraBonus = 5;
   private int cardTypesWithoutJoker = 3;
   private int numberOfJokers = 2;
   private boolean chooseInitialTerritories = true;
@@ -192,8 +193,10 @@ public class RiskConfiguration {
   public RiskConfiguration() {
   }
 
+
   public RiskConfiguration(int maxNumberOfPlayers, int maxAttackerDice, int maxDefenderDice,
-      int[] initialTroops, boolean withCards, int cardTypesWithoutJoker, int numberOfJokers,
+      int[] initialTroops, boolean withCards, int[] tradeInBonus, int maxExtraBonus,
+      int cardTypesWithoutJoker, int numberOfJokers,
       boolean chooseInitialTerritories, int reinforcementAtLeast, int reinforcementThreshold,
       boolean occupyOnlyWithAttackingArmies, boolean fortifyOnlyFromSingleTerritory,
       boolean fortifyOnlyWithNonFightingArmies, boolean withMissions,
@@ -205,6 +208,8 @@ public class RiskConfiguration {
     this.maxDefenderDice = maxDefenderDice;
     this.initialTroops = initialTroops;
     this.withCards = withCards;
+    this.tradeInBonus = tradeInBonus;
+    this.maxExtraBonus = maxExtraBonus;
     this.cardTypesWithoutJoker = cardTypesWithoutJoker;
     this.numberOfJokers = numberOfJokers;
     this.chooseInitialTerritories = chooseInitialTerritories;
@@ -220,7 +225,6 @@ public class RiskConfiguration {
     this.map = map;
   }
 
-
   public RiskConfiguration(
       Collection<RiskContinentConfiguration> continents,
       Collection<RiskTerritoryConfiguration> territories, String map) {
@@ -228,8 +232,6 @@ public class RiskConfiguration {
     this.territories = new ArrayList<>(new HashSet<>(territories));
     this.map = map;
   }
-
-  private static Yaml riskConfigurationYaml = null;
 
   public static Yaml getYaml() {
     if (riskConfigurationYaml == null) {
@@ -255,8 +257,9 @@ public class RiskConfiguration {
   public int[] getInitialTroops() {
     if (initialTroops == null && territories != null) {
       initialTroops = new int[maxNumberOfPlayers - 1];
-      int territoryNumber = BigDecimal.valueOf(territories.size()).setScale(-1, RoundingMode.UP)
-          .intValue();
+      int territoryNumber = Math
+          .max(1, BigDecimal.valueOf(territories.size()).setScale(-1, RoundingMode.UP)
+              .intValue());
       int steps = Math.max(1, territoryNumber / 10);
       for (int i = 0; i < initialTroops.length; i++) {
         initialTroops[i] = territoryNumber;
@@ -278,6 +281,34 @@ public class RiskConfiguration {
   public void setInitialTroops(int initialTroops) {
     this.initialTroops = new int[maxNumberOfPlayers - 1];
     Arrays.fill(this.initialTroops, initialTroops);
+  }
+
+  public int[] getTradeInBonus() {
+    if (tradeInBonus == null && territories != null) {
+      this.tradeInBonus = new int[maxExtraBonus];
+      int territoryNumber = Math
+          .max(1, BigDecimal.valueOf(territories.size()).setScale(-1, RoundingMode.UP)
+              .intValue());
+      int plus = 2;
+      int lastPlus = 1;
+      this.tradeInBonus[0] = territoryNumber;
+      int i;
+      for (i = 1; (i + 1) < maxExtraBonus; i++) {
+        this.tradeInBonus[i] = this.tradeInBonus[i - 1] + plus;
+      }
+      do {
+        plus += lastPlus;
+        this.tradeInBonus[i] = this.tradeInBonus[i - 1] + plus;
+      } while (plus <= maxExtraBonus);
+    }
+    return tradeInBonus;
+  }
+
+  public void setTradeInBonus(int... tradeInBonus) {
+    this.tradeInBonus = new int[tradeInBonus.length];
+    for (int i = 0; i < this.tradeInBonus.length; i++) {
+      this.tradeInBonus[i] = tradeInBonus[i];
+    }
   }
 
   public int getMaxNumberOfPlayers() {
