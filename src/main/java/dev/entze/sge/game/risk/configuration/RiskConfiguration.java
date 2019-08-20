@@ -175,7 +175,7 @@ public class RiskConfiguration {
   private int[] initialTroops = null;
   private boolean withCards = true;
   private int[] tradeInBonus = null;
-  private int maxExtraBonus = 5;
+  private int maxExtraBonus = -1;
   private int cardTypesWithoutJoker = 3;
   private int numberOfJokers = 2;
   private boolean chooseInitialTerritories = true;
@@ -271,51 +271,50 @@ public class RiskConfiguration {
     return initialTroops;
   }
 
-  public void setInitialTroops(int... initialTroops) {
-    this.initialTroops = new int[maxNumberOfPlayers - 1];
-    for (int i = 0; i < initialTroops.length && i < this.initialTroops.length; i++) {
-      this.initialTroops[i] = initialTroops[i];
-    }
-  }
-
-  public void setInitialTroops(int initialTroops) {
-    this.initialTroops = new int[maxNumberOfPlayers - 1];
-    Arrays.fill(this.initialTroops, initialTroops);
+  public void setInitialTroops(int[] initialTroops) {
+    yamlString = null;
+    this.initialTroops = initialTroops.clone();
   }
 
   public int[] getTradeInBonus() {
     if (tradeInBonus == null && territories != null) {
-      this.tradeInBonus = new int[maxExtraBonus];
+      this.tradeInBonus = new int[getMaxExtraBonus()];
       int territoryNumber = Math
-          .max(1, BigDecimal.valueOf(territories.size()).setScale(-1, RoundingMode.UP)
-              .intValue());
+          .max(1,
+              BigDecimal.valueOf(territories.size()).setScale(-1, RoundingMode.DOWN).intValue());
       int plus = 2;
       int lastPlus = 1;
       this.tradeInBonus[0] = territoryNumber;
       int i;
-      for (i = 1; (i + 1) < maxExtraBonus; i++) {
+      for (i = 1; (i + 1) < getMaxExtraBonus(); i++) {
         this.tradeInBonus[i] = this.tradeInBonus[i - 1] + plus;
       }
-      do {
+      while (plus <= getMaxExtraBonus()) {
         plus += lastPlus;
         this.tradeInBonus[i] = this.tradeInBonus[i - 1] + plus;
-      } while (plus <= maxExtraBonus);
+        lastPlus = plus;
+      }
     }
     return tradeInBonus;
   }
 
-  public void setTradeInBonus(int... tradeInBonus) {
-    this.tradeInBonus = new int[tradeInBonus.length];
-    for (int i = 0; i < this.tradeInBonus.length; i++) {
-      this.tradeInBonus[i] = tradeInBonus[i];
-    }
+
+  public void setTradeInBonus(int[] tradeInBonus) {
+    yamlString = null;
+    this.tradeInBonus = tradeInBonus.clone();
   }
 
   public int getMaxExtraBonus() {
+    if (maxExtraBonus < 0 && territories != null) {
+      maxExtraBonus = 1 + Math
+          .max(0,
+              BigDecimal.valueOf(territories.size()).setScale(-1, RoundingMode.DOWN).intValue());
+    }
     return maxExtraBonus;
   }
 
   public void setMaxExtraBonus(int maxExtraBonus) {
+    yamlString = null;
     this.maxExtraBonus = maxExtraBonus;
   }
 
@@ -324,6 +323,7 @@ public class RiskConfiguration {
   }
 
   public void setMaxNumberOfPlayers(int maxNumberOfPlayers) {
+    yamlString = null;
     this.maxNumberOfPlayers = maxNumberOfPlayers;
   }
 
@@ -332,6 +332,7 @@ public class RiskConfiguration {
   }
 
   public void setMaxAttackerDice(int maxAttackerDice) {
+    yamlString = null;
     this.maxAttackerDice = maxAttackerDice;
   }
 
@@ -340,6 +341,7 @@ public class RiskConfiguration {
   }
 
   public void setMaxDefenderDice(int maxDefenderDice) {
+    yamlString = null;
     this.maxDefenderDice = maxDefenderDice;
   }
 
@@ -348,6 +350,7 @@ public class RiskConfiguration {
   }
 
   public void setWithCards(boolean withCards) {
+    yamlString = null;
     this.withCards = withCards;
   }
 
@@ -356,6 +359,7 @@ public class RiskConfiguration {
   }
 
   public void setCardTypesWithoutJoker(int cardTypesWithoutJoker) {
+    yamlString = null;
     this.cardTypesWithoutJoker = cardTypesWithoutJoker;
   }
 
@@ -364,6 +368,7 @@ public class RiskConfiguration {
   }
 
   public void setNumberOfJokers(int numberOfJokers) {
+    yamlString = null;
     this.numberOfJokers = numberOfJokers;
   }
 
@@ -372,6 +377,7 @@ public class RiskConfiguration {
   }
 
   public void setChooseInitialTerritories(boolean chooseInitialTerritories) {
+    yamlString = null;
     this.chooseInitialTerritories = chooseInitialTerritories;
   }
 
@@ -380,6 +386,7 @@ public class RiskConfiguration {
   }
 
   public void setReinforcementAtLeast(int reinforcementAtLeast) {
+    yamlString = null;
     this.reinforcementAtLeast = reinforcementAtLeast;
   }
 
@@ -388,6 +395,7 @@ public class RiskConfiguration {
   }
 
   public void setReinforcementThreshold(int reinforcementThreshold) {
+    yamlString = null;
     this.reinforcementThreshold = reinforcementThreshold;
   }
 
@@ -396,6 +404,7 @@ public class RiskConfiguration {
   }
 
   public void setOccupyOnlyWithAttackingArmies(boolean occupyOnlyWithAttackingArmies) {
+    yamlString = null;
     this.occupyOnlyWithAttackingArmies = occupyOnlyWithAttackingArmies;
   }
 
@@ -404,6 +413,7 @@ public class RiskConfiguration {
   }
 
   public void setFortifyOnlyFromSingleTerritory(boolean fortifyOnlyFromSingleTerritory) {
+    yamlString = null;
     this.fortifyOnlyFromSingleTerritory = fortifyOnlyFromSingleTerritory;
   }
 
@@ -412,6 +422,7 @@ public class RiskConfiguration {
   }
 
   public void setFortifyOnlyWithNonFightingArmies(boolean fortifyOnlyWithNonFightingArmies) {
+    yamlString = null;
     this.fortifyOnlyWithNonFightingArmies = fortifyOnlyWithNonFightingArmies;
   }
 
@@ -420,6 +431,7 @@ public class RiskConfiguration {
   }
 
   public void setWithMissions(boolean withMissions) {
+    yamlString = null;
     this.withMissions = withMissions;
   }
 
@@ -429,6 +441,7 @@ public class RiskConfiguration {
 
   public void setMissions(
       List<RiskMissionConfiguration> missions) {
+    yamlString = null;
     this.missions = new ArrayList<>(new HashSet<>(missions));
   }
 
@@ -438,6 +451,7 @@ public class RiskConfiguration {
 
   public void setContinents(
       List<RiskContinentConfiguration> continents) {
+    yamlString = null;
     this.continents = new ArrayList<>(new HashSet<>(continents));
   }
 
@@ -447,6 +461,7 @@ public class RiskConfiguration {
 
   public void setTerritories(
       List<RiskTerritoryConfiguration> territories) {
+    yamlString = null;
     this.territories = new ArrayList<>(new HashSet<>(territories));
   }
 
@@ -455,6 +470,7 @@ public class RiskConfiguration {
   }
 
   public void setMap(String map) {
+    yamlString = null;
     this.map = map;
   }
 
@@ -501,5 +517,15 @@ public class RiskConfiguration {
     result = 31 * result + Arrays.hashCode(getInitialTroops());
     result = 31 * result + Arrays.hashCode(getTradeInBonus());
     return result;
+  }
+
+  private String yamlString = null;
+
+  @Override
+  public String toString() {
+    if (yamlString == null) {
+      yamlString = getYaml().dump(this);
+    }
+    return yamlString;
   }
 }

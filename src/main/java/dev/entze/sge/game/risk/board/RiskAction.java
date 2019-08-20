@@ -129,6 +129,10 @@ public class RiskAction {
     return srcId == END_PHASE.srcId && targetId == END_PHASE.targetId && value == END_PHASE.value;
   }
 
+  public boolean isCardIds() {
+    return srcId == CARD_ID && targetId == CARD_ID;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

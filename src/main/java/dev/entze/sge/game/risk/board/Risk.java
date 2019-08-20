@@ -178,6 +178,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       return initialSelectGPA();
     } else if (isInitialReinforce()) {
       return initialReinforceGPA();
+    } else if (board.hasToTradeInCards(currentPlayerId)) {
+      return tradeInGPA();
     } else if (board.isReinforcementPhase()) {
       return reinforceGPA();
     } else if (board.isAttackPhase()) {
@@ -236,21 +238,32 @@ public class Risk implements Game<RiskAction, RiskBoard> {
         .map(id -> RiskAction.reinforce(id, 1)).collect(Collectors.toSet());
   }
 
+  private Set<RiskAction> tradeInGPA() {
+    return board.getTradeInOptionSlots(currentPlayerId).stream().map(RiskAction::cardSlots)
+        .collect(Collectors.toSet());
+  }
+
   private Set<RiskAction> reinforceGPA() {
     Set<RiskAction> actions = new HashSet<>();
     int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
 
     if (board.couldTradeInCards(currentPlayerId)) {
-      for (Integer slots : board.getTradeInOptionSlots(currentPlayerId)) {
-        actions.add(RiskAction.cardSlots(slots));
-      }
+      actions.addAll(tradeInGPA());
     }
-    if (actions.isEmpty() || !board.hasToTradeInCards(currentPlayerId)) {
-      for (int r = 1; r <= reinforcementsLeft; r++) {
-        final int finalR = r;
-        actions.addAll(board.getTerritories().entrySet().stream()
-            .filter(t -> t.getValue().getOccupantPlayerId() == currentPlayerId)
-            .map(t -> RiskAction.reinforce(t.getKey(), finalR)).collect(Collectors.toSet()));
+
+    Map<Integer, RiskTerritory> territories = board.getTerritories().entrySet().stream().filter(
+        t -> t.getValue().getOccupantPlayerId() == currentPlayerId && !board
+            .isReinforcedAlready(t.getValue().getOccupantPlayerId()))
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+    if (territories.size() == 1) {
+      for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
+        actions.add(RiskAction.reinforce(territory.getKey(), reinforcementsLeft));
+      }
+    } else {
+      for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
+        for (int r = 1; r <= reinforcementsLeft; r++) {
+          actions.add(RiskAction.reinforce(territory.getKey(), r));
+        }
       }
     }
     return actions;
@@ -325,11 +338,17 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     } else if (isInitialReinforce()) {
       return board.isTerritory(riskAction.reinforcedId()) && riskAction.troops() == 1
           && board.getTerritoryOccupantId(riskAction.reinforcedId()) == currentPlayerId;
+    } else if (board.hasToTradeInCards(currentPlayerId)) {
+      return riskAction.isCardIds();
+    } else if (riskAction.isCardIds()) {
+      return board.allowedToTradeIn(currentPlayerId) && board
+          .canTradeInCardIds(currentPlayerId, riskAction.playedCards());
     } else if (board.isReinforcementPhase()) {
       int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
       int reinforced = riskAction.reinforcedId();
       return 1 <= riskAction.troops() && riskAction.troops() <= reinforcementsLeft && board
-          .isTerritory(reinforced) && board.getTerritoryOccupantId(reinforced) == currentPlayerId;
+          .isTerritory(reinforced) && !board.isReinforcedAlready(reinforced)
+          && board.getTerritoryOccupantId(reinforced) == currentPlayerId;
     } else if (board.isAttackPhase()) {
 
       int attackingId = riskAction.attackingId();
@@ -379,6 +398,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       next = initialSelectDA(riskAction);
     } else if (isInitialReinforce()) {
       next = initialReinforceDA(riskAction);
+    } else if (board.allowedToTradeIn(currentPlayerId) && riskAction.isCardIds()) {
+      next = tradeInDA(riskAction);
     } else if (board.isReinforcementPhase()) {
       next = reinforceDA(riskAction);
     } else if (board.isAttackPhase()) {
@@ -479,6 +500,23 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     return nextPlayerId(currentPlayerId);
   }
 
+  private Risk tradeInDA(RiskAction riskAction) {
+
+    Set<Integer> cardIds = riskAction.playedCards();
+    if (!board.allowedToTradeIn(currentPlayerId)) {
+      throw new IllegalArgumentException("Cards cannot be traded in at this time");
+    }
+    if (!board.canTradeInCardIds(currentPlayerId, cardIds)) {
+      throw new IllegalArgumentException("These cards cannot be traded in as a set");
+    }
+
+    Risk next = new Risk(this);
+
+    next.board.tradeIn(next.currentPlayerId, cardIds);
+
+    return next;
+  }
+
   private Risk reinforceDA(RiskAction riskAction) {
     int reinforcedId = riskAction.reinforcedId();
     int troops = riskAction.troops();
@@ -488,6 +526,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
         errorMsg = "Reinforced territory is not an assigned territoryId";
       } else if (board.getTerritoryOccupantId(reinforcedId) != currentPlayerId) {
         errorMsg = "Reinforced territory is not occupied by currentPlayer";
+      } else if (board.isReinforcedAlready(reinforcedId)) {
+        errorMsg = "Reinforced territory was already reinforced in an previous action";
       }
       if (!(1 <= troops && troops <= board.reinforcementsLeft(currentPlayerId))) {
         if (!errorMsg.isEmpty()) {

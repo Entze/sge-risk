@@ -17,6 +17,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -69,6 +70,7 @@ public class RiskBoard {
   private final Map<Integer, RiskContinent> continents;
 
   private final int[] nonDeployedReinforcements;
+  private final Set<Integer> reinforcedTerritories;
   private final Map<Integer, Integer> involvedTroopsInAttacks;
   private final String map;
   private int attackingId;
@@ -152,6 +154,14 @@ public class RiskBoard {
               territoryConfiguration.getTerritoryId()))
           .collect(Collectors.toCollection(() -> new ArrayList<>(
               territoriesConfiguration.size() + configuration.getNumberOfJokers())));
+
+      for (RiskCard riskCard : cardList) {
+        if (!(1 <= riskCard.getCardType()
+            && riskCard.getCardType() <= configuration.getCardTypesWithoutJoker())) {
+          throw new IllegalArgumentException("Illegal card type found: " + riskCard.toString());
+        }
+      }
+
       for (int i = 0; i < configuration.getNumberOfJokers(); i++) {
         cardList.add(new RiskCard(RiskCard.JOKER, -1));
       }
@@ -178,6 +188,9 @@ public class RiskBoard {
     int[] initialTroops = configuration.getInitialTroops();
     Arrays.fill(nonDeployedReinforcements,
         initialTroops[Math.max(0, Math.min(numberOfPlayers - 2, initialTroops.length - 1))]);
+
+    reinforcedTerritories = Collections.emptySet();
+
     if (!configuration.isChooseInitialTerritories()) {
       List<Integer> ids = new ArrayList<>(territories.keySet());
       Collections.shuffle(ids);
@@ -243,7 +256,7 @@ public class RiskBoard {
         riskBoard.fortifyConnectivityInspector, riskBoard.deckOfCards, riskBoard.allMissions,
         riskBoard.playerMissions,
         riskBoard.playerCards,
-        riskBoard.continents, riskBoard.nonDeployedReinforcements,
+        riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.reinforcedTerritories,
         riskBoard.involvedTroopsInAttacks, riskBoard.attackingId,
         riskBoard.defendingId, riskBoard.troops, riskBoard.hasOccupiedCountry, riskBoard.phase,
         riskBoard.initialSelectMaybe, riskBoard.initialReinforceMaybe,
@@ -263,6 +276,7 @@ public class RiskBoard {
       RiskMission[] playerMissions,
       Map<Integer, List<RiskCard>> playerCards,
       Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements,
+      Collection<Integer> reinforcedTerritories,
       Map<Integer, Integer> involvedTroopsInAttacks, int attackingId,
       int defendingId, int troops, boolean hasOccupiedCountry, RiskPhase phase,
       boolean initialSelectMaybe, boolean initialReinforceMaybe,
@@ -324,6 +338,7 @@ public class RiskBoard {
     this.playerCards = playerCards != null ? Map.copyOf(playerCards) : null;
     this.continents = continents;
     this.nonDeployedReinforcements = nonDeployedReinforcements.clone();
+    this.reinforcedTerritories = new HashSet<>(reinforcedTerritories);
     this.involvedTroopsInAttacks = new HashMap<>(involvedTroopsInAttacks);
     this.attackingId = attackingId;
     this.defendingId = defendingId;
@@ -461,6 +476,7 @@ public class RiskBoard {
     involvedTroopsInAttacks.clear();
     hasOccupiedCountry = false;
     awardReinforcements(nextPlayer);
+    reinforcedTerritories.clear();
   }
 
   private void awardReinforcements(int player) {
@@ -538,11 +554,17 @@ public class RiskBoard {
       RiskTerritory territory = territories.get(reinforcedId);
       territory.setTroops(territory.getTroops() + troops);
       nonDeployedReinforcements[player] -= troops;
+      reinforcedTerritories.add(reinforcedId);
     }
+  }
+
+  boolean isReinforcedAlready(int reinforcedId) {
+    return reinforcedTerritories.contains(reinforcedId);
   }
 
   void endReinforcementPhase() {
     phase = RiskPhase.ATTACK;
+    reinforcedTerritories.clear();
   }
 
   public Set<Integer> neighboringTerritories(int territoryId) {
@@ -1063,6 +1085,11 @@ public class RiskBoard {
     return cardTypesWithoutJoker * cardTypesWithoutJoker + 1;
   }
 
+  boolean allowedToTradeIn(int player) {
+    return isReinforcementPhase()
+        || playerCards.getOrDefault(player, Collections.emptyList()).size() >= cardSlots();
+  }
+
   public int getTradeInBonus(int n) {
     if (n < 0) {
       return 0;
@@ -1078,14 +1105,15 @@ public class RiskBoard {
     return getTradeInBonus(tradeIns);
   }
 
-  boolean canTradeInCardIds(final int player, Set<Integer> cards) {
+  boolean canTradeInCardIds(final int player, Set<Integer> cardIds) {
     final List<RiskCard> playerCards = this.playerCards
         .getOrDefault(player, Collections.emptyList());
     final int cardsInHand = playerCards.size();
-    if (cards.size() != cardTypesWithoutJoker || cards.stream().anyMatch(c -> c >= cardsInHand)) {
+    if (cardIds.size() != cardTypesWithoutJoker || cardIds.stream()
+        .anyMatch(c -> c >= cardsInHand)) {
       return false;
     }
-    List<RiskCard> toTradeIn = cards.stream().map(playerCards::get).collect(Collectors.toList());
+    List<RiskCard> toTradeIn = cardIds.stream().map(playerCards::get).collect(Collectors.toList());
     Map<Integer, Integer> numberOfCards = numberOfCards(toTradeIn);
 
     final int numberOfWildcards = numberOfCards.getOrDefault(RiskCard.WILDCARD, 0);
@@ -1098,6 +1126,20 @@ public class RiskBoard {
         .filter(k -> k != RiskCard.WILDCARD && k != RiskCard.JOKER).distinct().count()
         + numberOfWildcards + numberOfJokers
         == cardTypesWithoutJoker;
+  }
+
+  void tradeIn(int player, Set<Integer> cardIds) {
+    Deque<RiskCard> cards = cardIds.stream()
+        .map(i -> playerCards.get(player).get(i)).collect(Collectors.toCollection(LinkedList::new));
+    playerCards.get(player).removeAll(cards);
+    Util.shuffle(cards);
+    this.deckOfCards.addAll(cards);
+    this.nonDeployedReinforcements[player] += getTradeInBonus();
+    tradeIns++;
+    if (phase != RiskPhase.REINFORCEMENT) {
+      reinforcedTerritories.clear();
+    }
+    phase = RiskPhase.REINFORCEMENT;
   }
 
   void drawCardIfPossible(int player) {
