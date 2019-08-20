@@ -335,7 +335,14 @@ public class RiskBoard {
     this.deckOfCards = deckOfCards != null ? new ArrayDeque<>(deckOfCards) : null;
     this.allMissions = allMissions;
     this.playerMissions = playerMissions != null ? playerMissions.clone() : null;
-    this.playerCards = playerCards != null ? Map.copyOf(playerCards) : null;
+    if (playerCards == null) {
+      this.playerCards = null;
+    } else {
+      this.playerCards = new HashMap<>(1 + (int) (0.75f * playerCards.size()), 0.75f);
+      for (Entry<Integer, List<RiskCard>> entry : playerCards.entrySet()) {
+        this.playerCards.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+      }
+    }
     this.continents = continents;
     this.nonDeployedReinforcements = nonDeployedReinforcements.clone();
     this.reinforcedTerritories = new HashSet<>(reinforcedTerritories);
@@ -361,8 +368,8 @@ public class RiskBoard {
       return false;
     }
 
-    for (int i = 0; i < array.length; i++) {
-      if (array[i] > sizes[i] && array[i] != j && array[i] != w) {
+    for (int i = 0; i < sizes.length; i++) {
+      if (array[i] >= sizes[i] && array[i] != j && array[i] != w) {
         return false;
       }
     }
@@ -1018,18 +1025,21 @@ public class RiskBoard {
     final int jokersSize = jokers.size();
 
     Stream<Entry<Integer, List<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
-        .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
+        .filter(
+            e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
 
     List<List<RiskCard>> sepCards = stream.map(e -> Util.asList(e.getValue()))
         .collect(Collectors.toList());
 
-    final int sepCardsSize = sepCards.size();
+    final int sepCardsSize = (int) sepCards.stream().filter(s -> !s.isEmpty()).count();
     if (sepCardsSize + wildcardsSize + jokersSize < cardTypesWithoutJoker) {
       return Collections.emptySet();
     }
 
     if (sepCardsSize + jokersSize <= 0) {
-      return List.of(wildcards);
+      return Util.asList(
+          Util.combinations(wildcards, cardTypesWithoutJoker).stream().map(Util::asList).collect(
+              Collectors.toList()));
     }
 
     int[] sizes = sepCards.stream().mapToInt(Collection::size).toArray();
@@ -1040,6 +1050,11 @@ public class RiskBoard {
 
     int[] indices = new int[cardTypesWithoutJoker];
     Arrays.fill(indices, 0);
+    while (!allInRange(indices, sizes, j, w)
+        || Util.numberOfEqualTo(indices, j) > jokersSize
+        || Util.numberOfEqualTo(indices, w) > wildcardsSize) {
+      indices = Util.permutations(indices, r);
+    }
 
     Collection<List<RiskCard>> options = new ArrayList<>();
     Collection<RiskCard> option = new ArrayList<>(cardTypesWithoutJoker);
@@ -1062,8 +1077,8 @@ public class RiskBoard {
       //skips permutations which are not possible (due to being out of range or not enough cards)
       do {
         indices = Util.permutations(indices, r);
-      } while (!Util.allEqualTo(indices, 0) && !allInRange(indices, sizes, j, w)
-          && (Util.numberOfEqualTo(indices, j) > jokersSize
+      } while (!Util.allEqualTo(indices, 0) && (!allInRange(indices, sizes, j, w)
+          || Util.numberOfEqualTo(indices, j) > jokersSize
           || Util.numberOfEqualTo(indices, w) > wildcardsSize));
 
     } while (!Util.allEqualTo(indices, 0));

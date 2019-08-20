@@ -5,11 +5,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
+import dev.entze.sge.game.ActionRecord;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,10 +19,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.yaml.snakeyaml.Yaml;
 
-@RunWith(JUnitQuickcheck.class)
+//@RunWith(JUnitQuickcheck.class)
 public class RiskTest {
 
   private final String simpleConfigYaml =
@@ -828,6 +829,73 @@ public class RiskTest {
   public void test_constructor_one() {
     new Risk(2);
   }
+
+  @Test
+  public void test_game_checkIfAllPossibleActionsAreValid() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+
+    Deque<RiskAction> actions = new ArrayDeque<>();
+    Deque<Risk> risks = new ArrayDeque<>();
+    Deque<Integer> actionLength = new ArrayDeque<>();
+
+    risks.add(risk);
+
+    Set<RiskAction> possibleActions = new HashSet<>();
+    while (!risks.isEmpty()) {
+
+      risk = risks.removeFirst();
+      possibleActions.addAll(risk.getPossibleActions());
+      for (RiskAction possibleAction : possibleActions) {
+        assertTrue(risk.getActionRecords().toString(), risk.isValidAction(possibleAction));
+        try {
+          risks.add((Risk) risk.doAction(possibleAction));
+        } catch (IllegalArgumentException e) {
+          e.printStackTrace();
+          System.err.println(risk.toTextRepresentation() + "\n" + possibleActions);
+          fail(
+              ActionRecord.iterableToString(risk.getActionRecords()) + "<" + risk.getCurrentPlayer()
+                  + " " + possibleAction.toString() + ">");
+        }
+      }
+
+      possibleActions.clear();
+    }
+
+  }
+
+  @Test
+  public void test_game_doAction_tradeIn() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    Risk risk = new Risk(config, 2);
+    //<0, [-(1)->2]> <1, [-(1)->1]> <0, [-(1)->0] [-(1)->2]> <1, [-(1)->1] [-(1)->1] [-(3)->1] [1-(2)->2]> < [0X2]> <1, [O2] [end phase]>
+
+    risk = (Risk) risk.doAction(RiskAction.select(2)); //<0, [-(1)->2]>
+    //
+    risk = (Risk) risk.doAction(RiskAction.select(1)); //<1, [-(1)->1]>
+    ///
+    risk = (Risk) risk.doAction(RiskAction.select(0)); //<0, [-(1)->0]
+    risk = (Risk) risk.doAction(RiskAction.select(2)); //[-(1)->2]>
+    //
+    risk = (Risk) risk.doAction(RiskAction.select(1)); //<1, [-(1)->1]
+    risk = (Risk) risk.doAction(RiskAction.select(1)); //[-(1)->1]
+    //
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3)); //[-(3)->1]
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 2, 2)); // [1-(2)->2]>
+    //
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2)); //< [0X2]>
+    //
+    risk = (Risk) risk.doAction(RiskAction.occupy(2)); //[O2]
+    risk = (Risk) risk.doAction(RiskAction.endPhase()); //[end phase]
+
+    System.out.println(risk.getPossibleActions());
+
+    fail();
+  }
+
+
 
   /*
   @Property(trials = 64)

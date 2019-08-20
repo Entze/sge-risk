@@ -252,8 +252,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     Map<Integer, RiskTerritory> territories = board.getTerritories().entrySet().stream().filter(
-        t -> t.getValue().getOccupantPlayerId() == currentPlayerId && !board
-            .isReinforcedAlready(t.getValue().getOccupantPlayerId()))
+        t -> t.getValue().getOccupantPlayerId() == currentPlayerId &&
+            !board.isReinforcedAlready(t.getKey()))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     if (territories.size() == 1) {
       for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
@@ -507,7 +507,11 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       throw new IllegalArgumentException("Cards cannot be traded in at this time");
     }
     if (!board.canTradeInCardIds(currentPlayerId, cardIds)) {
-      throw new IllegalArgumentException("These cards cannot be traded in as a set");
+      final List<RiskCard> playerCards = board.getPlayerCards(currentPlayerId);
+      throw new IllegalArgumentException("The cards [" + cardIds.stream()
+          .map(i -> "(" + i + "," + (i < playerCards.size() ? playerCards.get(i) : "oob") + ")")
+          .collect(
+              Collectors.joining(", ")) + "] cannot be traded in as a set");
     }
 
     Risk next = new Risk(this);
