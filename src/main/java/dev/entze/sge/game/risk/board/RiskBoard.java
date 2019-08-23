@@ -1,5 +1,6 @@
 package dev.entze.sge.game.risk.board;
 
+import com.google.common.collect.Sets;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskMissionConfiguration;
@@ -26,7 +27,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.alg.connectivity.ConnectivityInspector;
@@ -35,6 +35,27 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
 public class RiskBoard {
+
+  private static final Set<Set<Integer>> TRADE_IN_3_OUT_OF_5 = Set
+      .of(Set.of(0, 1, 2), Set.of(0, 1, 3), Set.of(0, 2, 3), Set.of(1, 2, 3), Set.of(0, 1, 4),
+          Set.of(0, 2, 4), Set.of(1, 2, 4), Set.of(0, 3, 4), Set.of(1, 3, 4), Set.of(2, 3, 4));
+
+  private static final Set<Set<Integer>> TRADE_IN_3_OUT_OF_4 = Set
+      .of(Set.of(0, 1, 2), Set.of(0, 1, 3), Set.of(0, 2, 3), Set.of(1, 2, 3));
+
+  private static final Set<Set<Integer>> TRADE_IN_3_OUT_OF_3 = Set.of(Set.of(0, 1, 2));
+
+  private static final Set<Collection<Integer>> SETS_3_OUT_OF_5 = Set.of(
+      List.of(-1, -1, -1),
+      List.of(1, 1, 1), List.of(2, 2, 2), List.of(3, 3, 3),
+      List.of(0, 1, 1), List.of(0, 2, 2), List.of(0, 3, 3),
+      List.of(1, 2, 3),
+      List.of(0, 2, 3), List.of(0, 1, 3), List.of(0, 1, 2),
+      List.of(-1, 1, 1), List.of(-1, 2, 2), List.of(-1, 3, 3),
+      List.of(-1, 0, 1), List.of(-1, 0, 2), List.of(-1, 0, 3),
+      List.of(-1, 2, 3), List.of(-1, 1, 3), List.of(-1, 1, 2),
+      List.of(-1, -1, 1), List.of(-1, -1, 2), List.of(-1, -1, 3),
+      List.of(-1, -1, 0));
 
   //settings
   private final int numberOfPlayers;
@@ -856,6 +877,9 @@ public class RiskBoard {
   }
 
   public PriestLogic canTradeInCards(int player) {
+    if (!withCards) {
+      return PriestLogic.FALSE;
+    }
     PriestLogic hasCorrectCards = PriestLogic.FALSE;
     if (playerCards.containsKey(player)) {
       Collection<RiskCard> cards = this.playerCards.get(player);
@@ -881,20 +905,12 @@ public class RiskBoard {
   }
 
   public boolean couldTradeInCards(int player) {
-    return PriestLogic.possible(canTradeInCards(player));
+    return withCards && PriestLogic.possible(canTradeInCards(player));
   }
 
   public boolean hasToTradeInCards(int player) {
-    return playerCards.containsKey(player)
+    return withCards && playerCards.containsKey(player)
         && playerCards.get(player).size() >= cardSlots();
-  }
-
-  private boolean hasOneOfEach(Iterable<RiskCard> cards) {
-    return hasOneOfEach(numberOfCards(cards));
-  }
-
-  private boolean hasAllOfOne(Iterable<RiskCard> cards) {
-    return hasAllOfOne(numberOfCards(cards));
   }
 
   private Map<Integer, Integer> numberOfCards(Iterable<RiskCard> cards) {
@@ -923,167 +939,64 @@ public class RiskBoard {
         .anyMatch(e -> e.getValue() + numberOfJokers >= cardTypesWithoutJoker);
   }
 
-  Set<Integer> getTradeInOptionSlots(int player) {
-    List<RiskCard> playerCards = this.playerCards.getOrDefault(player, Collections.emptyList());
-    List<List<RiskCard>> tradeInOptions = getTradeInOptions(playerCards);
-
-    return tradeInOptions.stream().map(l -> {
-      int n = 0;
-      for (RiskCard riskCard : l) {
-        n |= 1 << (playerCards.indexOf(riskCard));
-      }
-      return n;
-    }).collect(Collectors.toSet());
-  }
-
-  List<List<RiskCard>> getTradeInOptions(int player) {
-    return getTradeInOptions(playerCards.getOrDefault(player, Collections.emptyList()));
-  }
-
-  private List<List<RiskCard>> getTradeInOptions(Collection<RiskCard> playerCards) {
-    if (playerCards.size() < cardTypesWithoutJoker) {
-      return Collections.emptyList();
-    }
-    List<List<RiskCard>> options = new ArrayList<>();
-    Map<Integer, List<RiskCard>> separatedPlayerCards = mapToCardTypes(playerCards);
-    if (separatedPlayerCards.getOrDefault(RiskCard.WILDCARD, Collections.emptyList()).size()
-        + separatedPlayerCards.getOrDefault(RiskCard.JOKER, Collections.emptyList()).size()
-        == playerCards.size()) {
-      return Util.combinations(playerCards, numberOfPlayers).stream().map(Util::asList)
-          .collect(Collectors.toList());
-    }
-    options.addAll(getTradeInOptionsAllOfOne(separatedPlayerCards));
-    options.addAll(getTradeInOptionsOneOfAll(separatedPlayerCards));
-    return options;
-  }
-
-  private Map<Integer, List<RiskCard>> mapToCardTypes(
-      final Collection<RiskCard> playerCards) {
-    return IntStream
-        .concat(IntStream.of(RiskCard.WILDCARD), IntStream.rangeClosed(0, cardTypesWithoutJoker))
-        .boxed().
-            collect(Collectors.toMap(
-                i -> i,
-                i -> playerCards.stream().filter(c -> c.getCardType() == i)
-                    .collect(Collectors.toList())));
-  }
-
-  private Collection<List<RiskCard>> getTradeInOptionsAllOfOne(
-      Collection<RiskCard> playerCards) {
-    return getTradeInOptionsAllOfOne(mapToCardTypes(playerCards));
-  }
-
-  private Collection<List<RiskCard>> getTradeInOptionsAllOfOne(
-      Map<Integer, List<RiskCard>> separatedPlayerCards) {
-
-    Collection<RiskCard> wildcards = separatedPlayerCards
-        .getOrDefault(RiskCard.WILDCARD, Collections.emptyList());
-    Collection<RiskCard> jokers = separatedPlayerCards
-        .getOrDefault(RiskCard.JOKER, Collections.emptyList());
-
-    final int wildcardsSize = wildcards.size();
-    final int jokersSize = jokers.size();
-
-    Stream<Entry<Integer, List<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
-        .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
-
-    stream = stream
-        .filter(e -> e.getValue().size() + wildcardsSize + jokersSize >= cardTypesWithoutJoker);
-
-    Collection<Collection<RiskCard>> cards = stream.map(Entry::getValue)
-        .collect(Collectors.toList());
-
-    cards.forEach(e -> {
-      e.addAll(wildcards);
-      e.addAll(jokers);
-    });
-
-    Collection<List<RiskCard>> tradeInOptions = new ArrayList<>();
-    for (Collection<RiskCard> riskCards : cards) {
-      tradeInOptions.addAll(
-          Util.combinations(riskCards, cardTypesWithoutJoker).stream().map(Util::asList).collect(
-              Collectors.toList()));
-    }
-
-    return tradeInOptions;
-  }
-
-  private Collection<List<RiskCard>> getTradeInOptionsOneOfAll(
-      Collection<RiskCard> playerCards) {
-    return getTradeInOptionsOneOfAll(mapToCardTypes(playerCards));
-  }
-
-  private Collection<List<RiskCard>> getTradeInOptionsOneOfAll(
-      Map<Integer, List<RiskCard>> separatedPlayerCards) {
-
-    List<RiskCard> wildcards = separatedPlayerCards
-        .getOrDefault(RiskCard.WILDCARD, Collections.emptyList());
-    List<RiskCard> jokers = separatedPlayerCards
-        .getOrDefault(RiskCard.JOKER, Collections.emptyList());
-
-    final int wildcardsSize = wildcards.size();
-    final int jokersSize = jokers.size();
-
-    Stream<Entry<Integer, List<RiskCard>>> stream = separatedPlayerCards.entrySet().stream()
-        .filter(
-            e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER);
-
-    List<List<RiskCard>> sepCards = stream.map(e -> Util.asList(e.getValue()))
-        .collect(Collectors.toList());
-
-    final int sepCardsSize = (int) sepCards.stream().filter(s -> !s.isEmpty()).count();
-    if (sepCardsSize + wildcardsSize + jokersSize < cardTypesWithoutJoker) {
+  private Set<Set<Integer>> getTradeInSlotCandidates(int player) {
+    if (!withCards || playerCards == null || !playerCards.containsKey(player)) {
       return Collections.emptySet();
     }
+    final int playerCardsSize = playerCards.get(player).size();
 
-    if (sepCardsSize + jokersSize <= 0) {
-      return Util.asList(
-          Util.combinations(wildcards, cardTypesWithoutJoker).stream().map(Util::asList).collect(
-              Collectors.toList()));
-    }
-
-    int[] sizes = sepCards.stream().mapToInt(Collection::size).toArray();
-    final int m = Arrays.stream(sizes).max().orElse(0);
-    final int r = m + (jokersSize > 0 ? 1 : 0) + (wildcardsSize > 0 ? 1 : 0);
-    final int j = m + 1;
-    final int w = m + 2;
-
-    int[] indices = new int[cardTypesWithoutJoker];
-    Arrays.fill(indices, 0);
-    while (!allInRange(indices, sizes, j, w)
-        || Util.numberOfEqualTo(indices, j) > jokersSize
-        || Util.numberOfEqualTo(indices, w) > wildcardsSize) {
-      indices = Util.permutations(indices, r);
-    }
-
-    Collection<List<RiskCard>> options = new ArrayList<>();
-    Collection<RiskCard> option = new ArrayList<>(cardTypesWithoutJoker);
-
-    do {
-      option.clear();
-
-      for (int index : indices) {
-        if (index == j) {
-          option.add(RiskCard.joker);
-        } else if (index == w) {
-          option.add(RiskCard.wildcard);
-        } else {
-          option.add(sepCards.get(option.size()).get(index));
-        }
+    if (cardTypesWithoutJoker == 3) {
+      if (playerCardsSize < 3) {
+        return Collections.emptySet();
       }
+      if (playerCardsSize == 3) {
+        return TRADE_IN_3_OUT_OF_3;
+      }
+      if (playerCardsSize == 4) {
+        return TRADE_IN_3_OUT_OF_4;
+      }
+      return TRADE_IN_3_OUT_OF_5;
+    }
 
-      options.add(List.copyOf(option));
+    return Sets.combinations(IntStream.range(0, playerCardsSize).boxed().collect(
+        Collectors.toSet()), cardTypesWithoutJoker);
+  }
 
-      //skips permutations which are not possible (due to being out of range or not enough cards)
-      do {
-        indices = Util.permutations(indices, r);
-      } while (!Util.allEqualTo(indices, 0) && (!allInRange(indices, sizes, j, w)
-          || Util.numberOfEqualTo(indices, j) > jokersSize
-          || Util.numberOfEqualTo(indices, w) > wildcardsSize));
+  /**
+   * Checks if the slot is a tradeable set.
+   * @param slotIds - the ids of the set
+   * @param player - the player
+   * @return true if it is a valid set
+   */
+  private boolean checkSlotCandidateDefault(Set<Integer> slotIds, int player) {
+    if (!withCards || playerCards == null || !playerCards.containsKey(player)
+        || slotIds.size() != cardTypesWithoutJoker) {
+      return false;
+    }
 
-    } while (!Util.allEqualTo(indices, 0));
+    //TODO
+    return false;
+  }
 
-    return options;
+  private boolean checkSlotCandidate(Set<Integer> slotIds, int player) {
+    if (!withCards || playerCards == null || !playerCards.containsKey(player)
+        || slotIds.size() != cardTypesWithoutJoker) {
+      return false;
+    }
+
+    List<Integer> cardtypes = slotIds.stream()
+        .map(i -> playerCards.get(player).get(i).getCardType())
+        .collect(Collectors.toUnmodifiableList());
+
+    boolean allWildcards = true;
+    int cardsSizeWithoutWildcardOrJokers = 0;
+    int jokers = 0;
+    int wildcards = 0;
+    int distinctCards = 0;
+
+
+    //TODO
+    return false;
   }
 
   public List<RiskCard> getPlayerCards(int player) {
@@ -1158,7 +1071,8 @@ public class RiskBoard {
   }
 
   void drawCardIfPossible(int player) {
-    if (withCards && hasOccupiedCountry && playerCards.containsKey(player)) {
+    if (withCards && hasOccupiedCountry && playerCards.containsKey(player) && !deckOfCards
+        .isEmpty()) {
       playerCards.get(player).add(deckOfCards.pop());
     }
   }

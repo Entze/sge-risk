@@ -155,9 +155,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     Set<Integer> playersInGame = board.getTerritories().values().stream()
         .map(RiskTerritory::getOccupantPlayerId).collect(Collectors.toSet());
     if (playersInGame.size() <= 1 && playersInGame.contains(i)) {
-      return 1;
+      return 1D;
     }
-    return 0;
+    return 0D;
   }
 
   @Override
@@ -239,8 +239,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private Set<RiskAction> tradeInGPA() {
-    return board.getTradeInOptionSlots(currentPlayerId).stream().map(RiskAction::cardSlots)
-        .collect(Collectors.toSet());
+    return Collections.emptySet(); //TODO
+    //return board.getTradeInOptionSlots(currentPlayerId).stream().map(RiskAction::cardSlots)        .collect(Collectors.toSet());
   }
 
   private Set<RiskAction> reinforceGPA() {

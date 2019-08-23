@@ -16,21 +16,27 @@ public class RiskActionGenerator extends Generator<RiskAction> {
     int roll = random.nextInt(8);
     RiskAction action = null;
     if (roll == 0) {
-      action = RiskAction.attack(random.nextInt(), random.nextInt(), random.nextInt());
+      action = RiskAction
+          .attack(random.nextInt(Integer.MAX_VALUE), random.nextInt(Integer.MAX_VALUE),
+              random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 1) {
-      action = RiskAction.casualties(random.nextInt(), random.nextInt());
+      action = RiskAction
+          .casualties(random.nextInt(Integer.MAX_VALUE), random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 2) {
       action = RiskAction.endPhase();
     } else if (roll == 3) {
-      action = RiskAction.fortify(random.nextInt(), random.nextInt(), random.nextInt());
+      action = RiskAction
+          .fortify(random.nextInt(Integer.MAX_VALUE), random.nextInt(Integer.MAX_VALUE),
+              random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 4) {
-      action = RiskAction.occupy(random.nextInt());
+      action = RiskAction.occupy(random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 5) {
-      action = RiskAction.cardSlots(random.nextInt());
+      action = RiskAction.cardSlots(random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 6) {
-      action = RiskAction.reinforce(random.nextInt(), random.nextInt());
+      action = RiskAction
+          .reinforce(random.nextInt(Integer.MAX_VALUE), random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 7) {
-      action = RiskAction.select(random.nextInt());
+      action = RiskAction.select(random.nextInt(Integer.MAX_VALUE));
     }
     return action;
   }

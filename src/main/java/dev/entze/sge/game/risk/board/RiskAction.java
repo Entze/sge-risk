@@ -1,5 +1,6 @@
 package dev.entze.sge.game.risk.board;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -177,4 +178,54 @@ public class RiskAction {
     return srcId + "-(" + value + ")->" + targetId;
 
   }
+
+  public static RiskAction fromString(String string) {
+    if (string.equals("end phase")) {
+      return endPhase();
+    }
+    if (string.startsWith("O")) {
+      int troops = Integer.parseInt(string.substring(1));
+      return occupy(troops);
+    }
+    if (string.contains("X")) {
+      String[] casualties = string.split("X");
+      int attacker = Integer.parseInt(casualties[0]);
+      int defender = Integer.parseInt(casualties[1]);
+      return casualties(attacker, defender);
+    }
+
+    if (string.startsWith("C[")) {
+      string = string.substring(2, string.length() - 1);
+      return playCards(Arrays.stream(string.split(", ")).map(Integer::parseInt)
+          .collect(Collectors.toUnmodifiableSet()));
+    }
+
+    if (string.startsWith("-(")) {
+      int troopsStringEnd = string.indexOf(')');
+      String troopsString = string.substring(2, troopsStringEnd);
+
+      int troops = Integer.parseInt(troopsString);
+      int destination = Integer.parseInt(string.substring(troopsStringEnd + 3));
+
+      return reinforce(destination, troops);
+    }
+
+    if (string.contains("(")) {
+      int srcStart = 0;
+      int srcEnd = string.indexOf('(') - 1;
+
+      int troopStart = srcEnd + 2;
+      int troopEnd = string.indexOf(')');
+
+      int destStart = troopEnd + 3;
+
+      return attack(Integer.parseInt(string.substring(srcStart, srcEnd)),
+          Integer.parseInt(string.substring(destStart)),
+          Integer.parseInt(string.substring(troopStart, troopEnd)));
+
+    }
+
+    return null;
+  }
+
 }
