@@ -13,7 +13,7 @@ public class RiskActionGenerator extends Generator<RiskAction> {
 
   @Override
   public RiskAction generate(SourceOfRandomness random, GenerationStatus status) {
-    int roll = random.nextInt(8);
+    int roll = random.nextInt(9);
     RiskAction action = null;
     if (roll == 0) {
       action = RiskAction
@@ -37,6 +37,8 @@ public class RiskActionGenerator extends Generator<RiskAction> {
           .reinforce(random.nextInt(Integer.MAX_VALUE), random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 7) {
       action = RiskAction.select(random.nextInt(Integer.MAX_VALUE));
+    } else if (roll == 8) {
+      action = RiskAction.bonusSlots(random.nextInt(Integer.MAX_VALUE));
     }
     return action;
   }

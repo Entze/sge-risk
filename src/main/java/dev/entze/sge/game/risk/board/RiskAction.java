@@ -12,6 +12,7 @@ public class RiskAction {
   private static final int CASUALTIES_ID = -1;
   private static final int OCCUPY_ID = -2;
   private static final int CARD_ID = -3;
+  private static final int BONUS_ID = -4;
 
   private final int srcId;
   private final int targetId;
@@ -69,19 +70,23 @@ public class RiskAction {
   }
 
   public static RiskAction playCards(int... ids) {
-    int value = 0;
-    for (int id : ids) {
-      value |= (1 << id);
-    }
-    return new RiskAction(CARD_ID, CARD_ID, value);
+    return new RiskAction(CARD_ID, CARD_ID, idsToSlotIds(ids));
   }
 
   public static RiskAction playCards(Iterable<Integer> ids) {
-    int value = 0;
-    for (int id : ids) {
-      value |= (1 << id);
-    }
-    return new RiskAction(CARD_ID, CARD_ID, value);
+    return new RiskAction(CARD_ID, CARD_ID, RiskAction.idsToSlotIds(ids));
+  }
+
+  public static RiskAction bonusSlots(int id) {
+    return new RiskAction(BONUS_ID, BONUS_ID, id);
+  }
+
+  public static RiskAction bonusCards(int... ids) {
+    return new RiskAction(BONUS_ID, BONUS_ID, RiskAction.idsToSlotIds(ids));
+  }
+
+  public static RiskAction bonusCards(Iterable<Integer> ids) {
+    return new RiskAction(BONUS_ID, BONUS_ID, RiskAction.idsToSlotIds(ids));
   }
 
   public int selected() {
@@ -105,9 +110,7 @@ public class RiskAction {
   }
 
   public Set<Integer> playedCards() {
-    return IntStream.range(0, Integer.SIZE - Integer.numberOfLeadingZeros(value))
-        .filter(i -> ((value & (1 << i)) >>> i) != 0)
-        .boxed().collect(Collectors.toSet());
+    return RiskAction.slotIdsToIds(value);
   }
 
   public int fortifyingId() {
@@ -132,6 +135,10 @@ public class RiskAction {
 
   public boolean isCardIds() {
     return srcId == CARD_ID && targetId == CARD_ID;
+  }
+
+  public boolean isBonus() {
+    return srcId == BONUS_ID && targetId == CARD_ID;
   }
 
   @Override
@@ -168,7 +175,11 @@ public class RiskAction {
     }
 
     if (srcId == targetId && srcId == CARD_ID) {
-      return "C" + playedCards().toString();
+      return "C".concat(playedCards().toString());
+    }
+
+    if (srcId == targetId && srcId == BONUS_ID) {
+      return "B".concat(playedCards().toString());
     }
 
     if (srcId == -1) {
@@ -183,6 +194,7 @@ public class RiskAction {
     if (string.equals("end phase")) {
       return endPhase();
     }
+
     if (string.startsWith("O")) {
       int troops = Integer.parseInt(string.substring(1));
       return occupy(troops);
@@ -192,6 +204,16 @@ public class RiskAction {
       int attacker = Integer.parseInt(casualties[0]);
       int defender = Integer.parseInt(casualties[1]);
       return casualties(attacker, defender);
+    }
+
+    if (string.equals("B[]")) {
+      return bonusSlots(0);
+    }
+
+    if (string.startsWith("B[")) {
+      string = string.substring(2, string.length() - 1);
+      return bonusCards(Arrays.stream(string.split(", ")).map(Integer::parseInt)
+          .collect(Collectors.toUnmodifiableSet()));
     }
 
     if (string.startsWith("C[")) {
@@ -227,5 +249,30 @@ public class RiskAction {
 
     return null;
   }
+
+
+  public static int idsToSlotIds(int... ids) {
+    int value = 0;
+    for (int id : ids) {
+      value |= (1 << id);
+    }
+    return value;
+  }
+
+
+  public static int idsToSlotIds(Iterable<Integer> ids) {
+    int value = 0;
+    for (int id : ids) {
+      value |= (1 << id);
+    }
+    return value;
+  }
+
+  public static Set<Integer> slotIdsToIds(final int ids) {
+    return IntStream.range(0, Integer.SIZE - Integer.numberOfLeadingZeros(ids))
+        .filter(i -> ((ids & (1 << i)) >>> i) != 0)
+        .boxed().collect(Collectors.toSet());
+  }
+
 
 }

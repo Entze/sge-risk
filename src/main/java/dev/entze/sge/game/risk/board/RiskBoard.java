@@ -1,5 +1,7 @@
 package dev.entze.sge.game.risk.board;
 
+import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
@@ -8,7 +10,6 @@ import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
 import dev.entze.sge.game.risk.mission.RiskMission;
 import dev.entze.sge.game.risk.mission.RiskMissionType;
 import dev.entze.sge.game.risk.util.PriestLogic;
-import dev.entze.sge.util.Util;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,17 +46,21 @@ public class RiskBoard {
 
   private static final Set<Set<Integer>> TRADE_IN_3_OUT_OF_3 = Set.of(Set.of(0, 1, 2));
 
-  private static final Set<Collection<Integer>> SETS_3_OUT_OF_5 = Set.of(
-      List.of(-1, -1, -1),
-      List.of(1, 1, 1), List.of(2, 2, 2), List.of(3, 3, 3),
-      List.of(0, 1, 1), List.of(0, 2, 2), List.of(0, 3, 3),
-      List.of(1, 2, 3),
-      List.of(0, 2, 3), List.of(0, 1, 3), List.of(0, 1, 2),
-      List.of(-1, 1, 1), List.of(-1, 2, 2), List.of(-1, 3, 3),
-      List.of(-1, 0, 1), List.of(-1, 0, 2), List.of(-1, 0, 3),
-      List.of(-1, 2, 3), List.of(-1, 1, 3), List.of(-1, 1, 2),
-      List.of(-1, -1, 1), List.of(-1, -1, 2), List.of(-1, -1, 3),
-      List.of(-1, -1, 0));
+  private static final Set<Multiset<Integer>> SETS_3_OUT_OF_5 = Set.of(
+      ImmutableMultiset.of(-1, -1, -1),
+      ImmutableMultiset.of(1, 1, 1), ImmutableMultiset.of(2, 2, 2), ImmutableMultiset.of(3, 3, 3),
+      ImmutableMultiset.of(0, 1, 1), ImmutableMultiset.of(0, 2, 2), ImmutableMultiset.of(0, 3, 3),
+      ImmutableMultiset.of(1, 2, 3),
+      ImmutableMultiset.of(0, 2, 3), ImmutableMultiset.of(0, 1, 3), ImmutableMultiset.of(0, 1, 2),
+      ImmutableMultiset.of(-1, 1, 1), ImmutableMultiset.of(-1, 2, 2),
+      ImmutableMultiset.of(-1, 3, 3),
+      ImmutableMultiset.of(-1, 0, 1), ImmutableMultiset.of(-1, 0, 2),
+      ImmutableMultiset.of(-1, 0, 3),
+      ImmutableMultiset.of(-1, 2, 3), ImmutableMultiset.of(-1, 1, 3),
+      ImmutableMultiset.of(-1, 1, 2),
+      ImmutableMultiset.of(-1, -1, 1), ImmutableMultiset.of(-1, -1, 2),
+      ImmutableMultiset.of(-1, -1, 3),
+      ImmutableMultiset.of(-1, -1, 0));
 
   //settings
   private final int numberOfPlayers;
@@ -64,6 +69,8 @@ public class RiskBoard {
 
   private final boolean withCards;
   private final int[] tradeInBonus;
+  private final int tradeInTerritoryBonus = 2;
+  private Set<Integer> tradeInTerritories;
   private final int maxExtraBonus;
   private int tradeIns;
   private final int cardTypesWithoutJoker;
@@ -83,6 +90,7 @@ public class RiskBoard {
 
 
   private final Deque<RiskCard> deckOfCards;
+  private final List<RiskCard> discardPile;
   private final Set<RiskMission> allMissions;
   private final RiskMission[] playerMissions;
 
@@ -97,6 +105,8 @@ public class RiskBoard {
   private int attackingId;
   private int defendingId;
   private int troops;
+
+  private int tradedInId;
   private boolean hasOccupiedCountry;
   private RiskPhase phase;
   private boolean initialSelectMaybe;
@@ -188,14 +198,18 @@ public class RiskBoard {
       }
       Collections.shuffle(cardList);
       deckOfCards = new ArrayDeque<>(cardList);
+      discardPile = Collections.emptyList();
       playerCards = IntStream.range(0, numberOfPlayers).boxed().collect(Collectors
           .toUnmodifiableMap(p -> p, p -> new ArrayList<>(cardSlots())));
 
+      tradeInTerritories = Collections.emptySet();
     } else {
       tradeInBonus = null;
       maxExtraBonus = 0;
       deckOfCards = null;
       playerCards = null;
+      discardPile = null;
+      tradeInTerritories = null;
     }
 
     Set<RiskContinentConfiguration> continentsConfiguration = new HashSet<>(
@@ -263,25 +277,26 @@ public class RiskBoard {
     initialSelectMaybe = true;
     initialReinforceMaybe = true;
 
+    tradedInId = -5;
+
     map = configuration.getMap();
   }
 
   RiskBoard(RiskBoard riskBoard) {
     this(riskBoard.numberOfPlayers, riskBoard.maxAttackerDice, riskBoard.maxDefenderDice,
         riskBoard.withCards, riskBoard.tradeInBonus, riskBoard.maxExtraBonus, riskBoard.tradeIns,
-        riskBoard.cardTypesWithoutJoker,
-        riskBoard.reinforcementAtLeast, riskBoard.reinforcementThreshold,
-        riskBoard.occupyOnlyWithAttackingArmies, riskBoard.fortifyOnlyFromSingleTerritory,
-        riskBoard.fortifyOnlyWithNonFightingArmies, riskBoard.withMissions,
-        riskBoard.gameBoard, riskBoard.territories, riskBoard.fortifyConnectivityGraph,
-        riskBoard.fortifyConnectivityInspector, riskBoard.deckOfCards, riskBoard.allMissions,
-        riskBoard.playerMissions,
-        riskBoard.playerCards,
-        riskBoard.continents, riskBoard.nonDeployedReinforcements, riskBoard.reinforcedTerritories,
-        riskBoard.involvedTroopsInAttacks, riskBoard.attackingId,
-        riskBoard.defendingId, riskBoard.troops, riskBoard.hasOccupiedCountry, riskBoard.phase,
-        riskBoard.initialSelectMaybe, riskBoard.initialReinforceMaybe,
-        riskBoard.map);
+        riskBoard.cardTypesWithoutJoker, riskBoard.reinforcementAtLeast,
+        riskBoard.reinforcementThreshold, riskBoard.occupyOnlyWithAttackingArmies,
+        riskBoard.fortifyOnlyFromSingleTerritory, riskBoard.fortifyOnlyWithNonFightingArmies,
+        riskBoard.withMissions, riskBoard.gameBoard, riskBoard.territories,
+        riskBoard.fortifyConnectivityGraph, riskBoard.fortifyConnectivityInspector,
+        riskBoard.deckOfCards, riskBoard.discardPile, riskBoard.allMissions,
+        riskBoard.playerMissions, riskBoard.playerCards, riskBoard.continents,
+        riskBoard.nonDeployedReinforcements, riskBoard.reinforcedTerritories,
+        riskBoard.involvedTroopsInAttacks, riskBoard.attackingId, riskBoard.defendingId,
+        riskBoard.troops, riskBoard.hasOccupiedCountry, riskBoard.phase,
+        riskBoard.initialSelectMaybe, riskBoard.initialReinforceMaybe, riskBoard.tradedInId,
+        riskBoard.tradeInTerritories, riskBoard.map);
   }
 
   private RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice,
@@ -293,14 +308,16 @@ public class RiskBoard {
       Graph<Integer, DefaultEdge> gameBoard, Map<Integer, RiskTerritory> territories,
       Map<Integer, Graph<Integer, DefaultEdge>> fortifyConnectivityGraph,
       Map<Integer, ConnectivityInspector<Integer, DefaultEdge>> fortifyConnectivityInspector,
-      Collection<RiskCard> deckOfCards, Set<RiskMission> allMissions,
+      Collection<RiskCard> deckOfCards, Collection<RiskCard> discardPile,
+      Set<RiskMission> allMissions,
       RiskMission[] playerMissions,
       Map<Integer, List<RiskCard>> playerCards,
       Map<Integer, RiskContinent> continents, int[] nonDeployedReinforcements,
       Collection<Integer> reinforcedTerritories,
       Map<Integer, Integer> involvedTroopsInAttacks, int attackingId,
       int defendingId, int troops, boolean hasOccupiedCountry, RiskPhase phase,
-      boolean initialSelectMaybe, boolean initialReinforceMaybe,
+      boolean initialSelectMaybe, boolean initialReinforceMaybe, int tradedInId,
+      Set<Integer> tradeInTerritories,
       String map) {
     this.numberOfPlayers = numberOfPlayers;
     this.maxAttackerDice = maxAttackerDice;
@@ -354,6 +371,7 @@ public class RiskBoard {
     }
 
     this.deckOfCards = deckOfCards != null ? new ArrayDeque<>(deckOfCards) : null;
+    this.discardPile = discardPile != null ? new ArrayList<>(discardPile) : null;
     this.allMissions = allMissions;
     this.playerMissions = playerMissions != null ? playerMissions.clone() : null;
     if (playerCards == null) {
@@ -375,6 +393,8 @@ public class RiskBoard {
     this.phase = phase;
     this.initialSelectMaybe = initialSelectMaybe;
     this.initialReinforceMaybe = initialReinforceMaybe;
+    this.tradedInId = tradedInId;
+    this.tradeInTerritories = tradeInTerritories != null ? new HashSet<>(tradeInTerritories) : null;
     this.map = map;
   }
 
@@ -382,19 +402,6 @@ public class RiskBoard {
       Map<Integer, RiskTerritory> territories) {
     return territories.keySet().stream().collect(Collectors
         .toMap(i -> i, i -> new RiskTerritory(territories.get(i)), (a, b) -> b));
-  }
-
-  private static boolean allInRange(int[] array, int[] sizes, int j, int w) {
-    if (array.length < sizes.length) {
-      return false;
-    }
-
-    for (int i = 0; i < sizes.length; i++) {
-      if (array[i] >= sizes[i] && array[i] != j && array[i] != w) {
-        return false;
-      }
-    }
-    return true;
   }
 
   private static void selectRandomMissions(List<RiskMission> missionList,
@@ -593,6 +600,8 @@ public class RiskBoard {
   void endReinforcementPhase() {
     phase = RiskPhase.ATTACK;
     reinforcedTerritories.clear();
+    tradeInTerritories.clear();
+    tradedInId = -5;
   }
 
   public Set<Integer> neighboringTerritories(int territoryId) {
@@ -876,67 +885,94 @@ public class RiskBoard {
     return Math.min(troops, getMobileTroops(territoryId));
   }
 
-  public PriestLogic canTradeInCards(int player) {
-    if (!withCards) {
-      return PriestLogic.FALSE;
+  private boolean containsTradeableSet(Multiset<Integer> cardTypes) {
+    if (cardTypes.size() < cardTypesWithoutJoker) {
+      return false;
     }
-    PriestLogic hasCorrectCards = PriestLogic.FALSE;
-    if (playerCards.containsKey(player)) {
-      Collection<RiskCard> cards = this.playerCards.get(player);
-      int size = cards.size();
-      boolean hasEnoughCards = size >= cardTypesWithoutJoker;
-      hasCorrectCards = PriestLogic.fromBoolean(hasEnoughCards);
-      if (hasEnoughCards && size < cardSlots() - 1) {
-        Map<Integer, Integer> numberOfCards = IntStream.rangeClosed(0, cardTypesWithoutJoker)
-            .boxed().collect(Collectors.toMap(i -> i, i -> 0));
-        for (RiskCard card : cards) {
-          if (card.getCardType() != RiskCard.WILDCARD) {
-            numberOfCards.compute(card.getCardType(), (k, v) -> v != null ? v + 1 : 1);
-          } else {
-            hasCorrectCards = PriestLogic.UNKNOWN;
-          }
-        }
+    int jokers = cardTypes.contains(RiskCard.JOKER) ? 1 : 0;
 
-        hasCorrectCards = PriestLogic
-            .implies(hasCorrectCards, hasOneOfEach(numberOfCards) || hasAllOfOne(numberOfCards));
-      }
+    int wildcards = cardTypes.count(RiskCard.WILDCARD);
+
+    if (jokers + wildcards >= cardTypesWithoutJoker) {
+      return true;
     }
-    return hasCorrectCards;
+
+    int[] count = IntStream.rangeClosed(1, cardTypesWithoutJoker).map(cardTypes::count).toArray();
+
+    int mostCards = Arrays.stream(count).max().orElse(0);
+
+    if (mostCards + jokers + wildcards >= cardTypesWithoutJoker) {
+      return true;
+    }
+
+    int distinctCards = Arrays.stream(count).map(i -> i <= 0 ? 0 : 1).sum();
+    return distinctCards + jokers + wildcards >= cardTypesWithoutJoker;
+  }
+
+  private boolean containsTradeableSet(List<RiskCard> playerCards) {
+    if (!withCards || playerCards.size() < cardTypesWithoutJoker) {
+      return false;
+    }
+    return containsTradeableSet(playerCards.stream().map(RiskCard::getCardType)
+        .collect(ImmutableMultiset.toImmutableMultiset()));
+  }
+
+  private boolean canTradeInAsSet(Multiset<Integer> cardTypes) {
+
+    int jokers = cardTypes.count(RiskCard.JOKER);
+
+    if (jokers > 1) {
+      return false;
+    }
+
+    int wildcards = cardTypes.count(RiskCard.WILDCARD);
+
+    if (jokers + wildcards == cardTypesWithoutJoker) {
+      return true;
+    }
+
+    int[] count = IntStream.rangeClosed(1, cardTypesWithoutJoker).map(cardTypes::count).toArray();
+
+    int mostCards = Arrays.stream(count).max().orElse(0);
+
+    if (mostCards + jokers + wildcards == cardTypesWithoutJoker) {
+      return true;
+    }
+
+    int distinctCards = Arrays.stream(count).map(i -> i <= 0 ? 0 : 1).sum();
+    return distinctCards + jokers + wildcards == cardTypesWithoutJoker;
+  }
+
+  private boolean canTradeInAsSet(List<RiskCard> playerCards) {
+    if (playerCards.size() != cardTypesWithoutJoker) {
+      return false;
+    }
+
+    return canTradeInAsSet(playerCards.stream().map(RiskCard::getCardType)
+        .collect(ImmutableMultiset.toImmutableMultiset()));
+
+  }
+
+  boolean canTradeInAsSet(Set<Integer> slotIds, int player) {
+    if (!withCards || playerCards == null || !playerCards.containsKey(player)) {
+      return false;
+    }
+    return canTradeInAsSet(slotIds.stream().map(i -> playerCards.get(player).get(i).getCardType())
+        .collect(ImmutableMultiset.toImmutableMultiset()));
   }
 
   public boolean couldTradeInCards(int player) {
-    return withCards && PriestLogic.possible(canTradeInCards(player));
+    if (!withCards || playerCards == null || !playerCards.containsKey(player)) {
+      return false;
+    }
+
+    List<RiskCard> riskCards = getPlayerCards(player);
+    return containsTradeableSet(riskCards);
   }
 
   public boolean hasToTradeInCards(int player) {
     return withCards && playerCards.containsKey(player)
         && playerCards.get(player).size() >= cardSlots();
-  }
-
-  private Map<Integer, Integer> numberOfCards(Iterable<RiskCard> cards) {
-    Map<Integer, Integer> numberOfCards = new HashMap<>();
-    for (RiskCard card : cards) {
-      numberOfCards.compute(card.getCardType(), (k, v) -> v == null ? 1 : v + 1);
-    }
-    return numberOfCards;
-  }
-
-  private boolean hasOneOfEach(Map<Integer, Integer> numberOfCards) {
-    final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
-    return numberOfCards.entrySet().stream().filter(
-        e -> e.getValue() > 0
-            && e.getKey() != RiskCard.JOKER
-            && e.getKey() != RiskCard.WILDCARD)
-        .count() + numberOfJokers >= cardTypesWithoutJoker;
-  }
-
-  private boolean hasAllOfOne(Map<Integer, Integer> numberOfCards) {
-    final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
-    return numberOfCards.entrySet().stream().filter(
-        e -> e.getValue() > 0
-            && e.getKey() != RiskCard.JOKER
-            && e.getKey() != RiskCard.WILDCARD)
-        .anyMatch(e -> e.getValue() + numberOfJokers >= cardTypesWithoutJoker);
   }
 
   private Set<Set<Integer>> getTradeInSlotCandidates(int player) {
@@ -964,6 +1000,7 @@ public class RiskBoard {
 
   /**
    * Checks if the slot is a tradeable set.
+   *
    * @param slotIds - the ids of the set
    * @param player - the player
    * @return true if it is a valid set
@@ -974,8 +1011,11 @@ public class RiskBoard {
       return false;
     }
 
-    //TODO
-    return false;
+    ImmutableMultiset<Integer> cardtypes = slotIds.stream()
+        .map(i -> playerCards.get(player).get(i).getCardType())
+        .collect(ImmutableMultiset.toImmutableMultiset());
+
+    return SETS_3_OUT_OF_5.contains(cardtypes);
   }
 
   private boolean checkSlotCandidate(Set<Integer> slotIds, int player) {
@@ -984,19 +1024,16 @@ public class RiskBoard {
       return false;
     }
 
-    List<Integer> cardtypes = slotIds.stream()
-        .map(i -> playerCards.get(player).get(i).getCardType())
-        .collect(Collectors.toUnmodifiableList());
+    if (cardTypesWithoutJoker == 3) {
+      return checkSlotCandidateDefault(slotIds, player);
+    }
 
-    boolean allWildcards = true;
-    int cardsSizeWithoutWildcardOrJokers = 0;
-    int jokers = 0;
-    int wildcards = 0;
-    int distinctCards = 0;
+    return canTradeInAsSet(slotIds, player);
+  }
 
-
-    //TODO
-    return false;
+  Set<Set<Integer>> getTradeInSlots(int player) {
+    return getTradeInSlotCandidates(player).stream().filter(c -> checkSlotCandidate(c, player))
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   public List<RiskCard> getPlayerCards(int player) {
@@ -1014,8 +1051,8 @@ public class RiskBoard {
   }
 
   boolean allowedToTradeIn(int player) {
-    return isReinforcementPhase()
-        || playerCards.getOrDefault(player, Collections.emptyList()).size() >= cardSlots();
+    return withCards && (isReinforcementPhase()
+        || playerCards.getOrDefault(player, Collections.emptyList()).size() >= cardSlots());
   }
 
   public int getTradeInBonus(int n) {
@@ -1033,47 +1070,78 @@ public class RiskBoard {
     return getTradeInBonus(tradeIns);
   }
 
-  boolean canTradeInCardIds(final int player, Set<Integer> cardIds) {
-    final List<RiskCard> playerCards = this.playerCards
-        .getOrDefault(player, Collections.emptyList());
-    final int cardsInHand = playerCards.size();
-    if (cardIds.size() != cardTypesWithoutJoker || cardIds.stream()
-        .anyMatch(c -> c >= cardsInHand)) {
-      return false;
-    }
-    List<RiskCard> toTradeIn = cardIds.stream().map(playerCards::get).collect(Collectors.toList());
-    Map<Integer, Integer> numberOfCards = numberOfCards(toTradeIn);
-
-    final int numberOfWildcards = numberOfCards.getOrDefault(RiskCard.WILDCARD, 0);
-    final int numberOfJokers = numberOfCards.getOrDefault(RiskCard.JOKER, 0);
-    return numberOfCards.entrySet().stream()
-        .filter(e -> e.getKey() != RiskCard.WILDCARD && e.getKey() != RiskCard.JOKER)
-        .map(Entry::getValue)
-        .anyMatch(v -> v + numberOfWildcards + numberOfJokers == cardTypesWithoutJoker)
-        || numberOfCards.keySet().stream()
-        .filter(k -> k != RiskCard.WILDCARD && k != RiskCard.JOKER).distinct().count()
-        + numberOfWildcards + numberOfJokers
-        == cardTypesWithoutJoker;
-  }
-
-  void tradeIn(int player, Set<Integer> cardIds) {
-    Deque<RiskCard> cards = cardIds.stream()
+  void tradeIn(Set<Integer> cardIds, int player) {
+    List<RiskCard> cards = cardIds.stream()
         .map(i -> playerCards.get(player).get(i)).collect(Collectors.toCollection(LinkedList::new));
-    playerCards.get(player).removeAll(cards);
-    Util.shuffle(cards);
-    this.deckOfCards.addAll(cards);
-    this.nonDeployedReinforcements[player] += getTradeInBonus();
-    tradeIns++;
+    this.discardPile.addAll(cards);
+    tradeInTerritories = cards.stream().filter(
+        c -> c.getCardType() != RiskCard.WILDCARD && c.getCardType() != RiskCard.JOKER
+            && getTerritoryOccupantId(c.getTerritoryId()) == player).map(RiskCard::getTerritoryId)
+        .collect(Collectors.toUnmodifiableSet());
+    this.playerCards.get(player).removeAll(cards);
     if (phase != RiskPhase.REINFORCEMENT) {
       reinforcedTerritories.clear();
     }
     phase = RiskPhase.REINFORCEMENT;
+    tradedInId = player;
+  }
+
+  Set<Integer> bonusCandidatesCardIds(Set<Integer> cardIds, int player) {
+    return cardIds.stream().filter(c -> {
+      RiskCard card = playerCards.get(player).get(c);
+      return card.getCardType() == RiskCard.WILDCARD
+          || getTerritoryOccupantId(card.getTerritoryId()) == player;
+    }).collect(
+        Collectors.toSet());
+  }
+
+  Set<Integer> bonusCandidatesTerritoryIds(Set<Integer> bonusCandidatesCardIds, int player) {
+    boolean containsWildcards = bonusCandidatesCardIds.stream()
+        .anyMatch(i -> playerCards.get(player).get(i).getCardType() == RiskCard.WILDCARD);
+
+    Set<Integer> territories = bonusCandidatesCardIds.stream()
+        .map(i -> playerCards.get(player).get(i))
+        .filter(c -> c.getCardType() != RiskCard.WILDCARD && c.getCardType() != RiskCard.JOKER)
+        .map(RiskCard::getTerritoryId).collect(Collectors.toSet());
+
+    if (!containsWildcards) {
+      return territories;
+    }
+
+    territories.addAll(this.territories.keySet().stream()
+        .filter(t -> getTerritoryOccupantId(t) == player && discardPile.stream()
+            .noneMatch(d -> d.getTerritoryId() == t)).collect(
+            Collectors.toSet()));
+
+    return territories;
+  }
+
+  void awardBonus(int nrOfMatchingTerritories, int player) {
+    this.nonDeployedReinforcements[player] +=
+        getTradeInBonus() + nrOfMatchingTerritories * tradeInTerritoryBonus;
+    tradeIns++;
+  }
+
+  int getTradedInId() {
+    return tradedInId;
   }
 
   void drawCardIfPossible(int player) {
-    if (withCards && hasOccupiedCountry && playerCards.containsKey(player) && !deckOfCards
-        .isEmpty()) {
-      playerCards.get(player).add(deckOfCards.pop());
+    if (withCards && hasOccupiedCountry && playerCards.containsKey(player)) {
+      if (deckOfCards.isEmpty()) {
+        reshuffle();
+      }
+      if (!deckOfCards.isEmpty()) {
+        playerCards.get(player).add(deckOfCards.pop());
+      }
+    }
+  }
+
+  private void reshuffle() {
+    if (withCards && discardPile != null && deckOfCards != null) {
+      Collections.shuffle(discardPile);
+      deckOfCards.addAll(discardPile);
+      discardPile.clear();
     }
   }
 

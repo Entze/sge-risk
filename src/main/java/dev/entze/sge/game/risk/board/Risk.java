@@ -21,6 +21,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   private final static int CASUALTIES_PLAYER = -6;
   private final static int DRAW_CARD_PLAYER = -2;
   private final static int MISSION_FULFILLED_PLAYER = -3;
+  private final static int BONUS_PLAYER = -5;
 
   private final boolean canonical;
   private final Dice attackerDice;
@@ -239,8 +240,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private Set<RiskAction> tradeInGPA() {
-    return Collections.emptySet(); //TODO
-    //return board.getTradeInOptionSlots(currentPlayerId).stream().map(RiskAction::cardSlots)        .collect(Collectors.toSet());
+    return board.getTradeInSlots(currentPlayerId).stream().map(RiskAction::playCards)
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   private Set<RiskAction> reinforceGPA() {
@@ -342,7 +343,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       return riskAction.isCardIds();
     } else if (riskAction.isCardIds()) {
       return board.allowedToTradeIn(currentPlayerId) && board
-          .canTradeInCardIds(currentPlayerId, riskAction.playedCards());
+          .canTradeInAsSet(riskAction.playedCards(), currentPlayerId);
     } else if (board.isReinforcementPhase()) {
       int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
       int reinforced = riskAction.reinforcedId();
@@ -393,6 +394,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     if (currentPlayerId < 0) {
       if (board.isAttack()) {
         next = casualtiesDA(riskAction);
+      } else if (currentPlayerId == BONUS_PLAYER) {
+        next = bonusDA(riskAction);
       }
     } else if (isInitialSelect()) {
       next = initialSelectDA(riskAction);
@@ -506,7 +509,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     if (!board.allowedToTradeIn(currentPlayerId)) {
       throw new IllegalArgumentException("Cards cannot be traded in at this time");
     }
-    if (!board.canTradeInCardIds(currentPlayerId, cardIds)) {
+    if (!board.canTradeInAsSet(cardIds, currentPlayerId)) {
       final List<RiskCard> playerCards = board.getPlayerCards(currentPlayerId);
       throw new IllegalArgumentException("The cards [" + cardIds.stream()
           .map(i -> "(" + i + "," + (i < playerCards.size() ? playerCards.get(i) : "oob") + ")")
@@ -516,7 +519,22 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     Risk next = new Risk(this);
 
-    next.board.tradeIn(next.currentPlayerId, cardIds);
+    next.board.tradeIn(cardIds, next.currentPlayerId);
+
+    next.currentPlayerId = Risk.BONUS_PLAYER;
+
+    return next;
+  }
+
+  private Risk bonusDA(RiskAction riskAction) {
+    if (!riskAction.isBonus()) {
+      throw new IllegalArgumentException("Action does not determine bonus.");
+    }
+
+    Risk next = new Risk(this);
+
+    next.currentPlayerId = next.board.getTradedInId();
+    next.board.awardBonus(riskAction.playedCards().size(), next.currentPlayerId);
 
     return next;
   }
