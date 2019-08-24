@@ -38,7 +38,7 @@ public class RiskActionGenerator extends Generator<RiskAction> {
     } else if (roll == 7) {
       action = RiskAction.select(random.nextInt(Integer.MAX_VALUE));
     } else if (roll == 8) {
-      action = RiskAction.bonusSlots(random.nextInt(Integer.MAX_VALUE));
+      action = RiskAction.bonusCards(random.nextInt(Integer.MAX_VALUE));
     }
     return action;
   }

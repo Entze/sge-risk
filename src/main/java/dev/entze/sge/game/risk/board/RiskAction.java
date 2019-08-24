@@ -77,17 +77,10 @@ public class RiskAction {
     return new RiskAction(CARD_ID, CARD_ID, RiskAction.idsToSlotIds(ids));
   }
 
-  public static RiskAction bonusSlots(int id) {
-    return new RiskAction(BONUS_ID, BONUS_ID, id);
+  public static RiskAction bonusCards(int nr) {
+    return new RiskAction(BONUS_ID, BONUS_ID, nr);
   }
 
-  public static RiskAction bonusCards(int... ids) {
-    return new RiskAction(BONUS_ID, BONUS_ID, RiskAction.idsToSlotIds(ids));
-  }
-
-  public static RiskAction bonusCards(Iterable<Integer> ids) {
-    return new RiskAction(BONUS_ID, BONUS_ID, RiskAction.idsToSlotIds(ids));
-  }
 
   public int selected() {
     return targetId;
@@ -127,6 +120,10 @@ public class RiskAction {
 
   public int defenderCasualties() {
     return (value >>> (Integer.SIZE / 2)) & (~0 >>> (Integer.SIZE / 2));
+  }
+
+  public int getBonus() {
+    return value;
   }
 
   public boolean isEndPhase() {
@@ -179,7 +176,7 @@ public class RiskAction {
     }
 
     if (srcId == targetId && srcId == BONUS_ID) {
-      return "B".concat(playedCards().toString());
+      return "B" + value;
     }
 
     if (srcId == -1) {
@@ -206,14 +203,8 @@ public class RiskAction {
       return casualties(attacker, defender);
     }
 
-    if (string.equals("B[]")) {
-      return bonusSlots(0);
-    }
-
-    if (string.startsWith("B[")) {
-      string = string.substring(2, string.length() - 1);
-      return bonusCards(Arrays.stream(string.split(", ")).map(Integer::parseInt)
-          .collect(Collectors.toUnmodifiableSet()));
+    if (string.startsWith("B")) {
+      return bonusCards(Integer.parseInt(string.substring(1)));
     }
 
     if (string.startsWith("C[")) {

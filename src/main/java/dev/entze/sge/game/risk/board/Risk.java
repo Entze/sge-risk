@@ -174,6 +174,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     if (currentPlayerId < 0) {
       if (board.isAttack()) {
         return casualtiesGPA();
+      } else if (currentPlayerId == BONUS_PLAYER) {
+        return bonusGPA();
       }
     } else if (isInitialSelect()) {
       return initialSelectGPA();
@@ -244,6 +246,12 @@ public class Risk implements Game<RiskAction, RiskBoard> {
         .collect(Collectors.toUnmodifiableSet());
   }
 
+  private Set<RiskAction> bonusGPA() {
+    return IntStream
+        .rangeClosed(board.getMinMatchingTerritories(), board.getMaxMatchingTerritories())
+        .mapToObj(RiskAction::bonusCards).collect(Collectors.toUnmodifiableSet());
+  }
+
   private Set<RiskAction> reinforceGPA() {
     Set<RiskAction> actions = new HashSet<>();
     int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
@@ -254,16 +262,30 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     Map<Integer, RiskTerritory> territories = board.getTerritories().entrySet().stream().filter(
         t -> t.getValue().getOccupantPlayerId() == currentPlayerId &&
-            !board.isReinforcedAlready(t.getKey()))
+            !board.isReinforcedAlready(t.getKey()) && board.inBonusTerritories(t.getKey()))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+
     if (territories.size() == 1) {
       for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
         actions.add(RiskAction.reinforce(territory.getKey(), reinforcementsLeft));
       }
     } else {
+
+      Set<Integer> bonusTerritories = board.getBonusTerritories().stream()
+          .filter(i -> !board.isReinforcedAlready(i)).collect(Collectors.toUnmodifiableSet());
+      final int tradeInTerritoryBonus = board.getTradeInTerritoryBonus();
+      final int promisedReinforcements = bonusTerritories.size() * tradeInTerritoryBonus;
+
+      for (Integer bonusTerritory : bonusTerritories) {
+        for (int r = tradeInTerritoryBonus; r < reinforcementsLeft - promisedReinforcements; r++) {
+          actions.add(RiskAction.reinforce(bonusTerritory, r));
+        }
+      }
+
       for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
-        for (int r = 1; r <= reinforcementsLeft; r++) {
-          actions.add(RiskAction.reinforce(territory.getKey(), r));
+        int territoryId = territory.getKey();
+        for (int r = 1; r <= (reinforcementsLeft - promisedReinforcements); r++) {
+          actions.add(RiskAction.reinforce(territoryId, r));
         }
       }
     }
@@ -530,11 +552,15 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     if (!riskAction.isBonus()) {
       throw new IllegalArgumentException("Action does not determine bonus.");
     }
+    if (!(board.getMinMatchingTerritories() <= riskAction.getBonus()
+        && riskAction.getBonus() <= board.getMaxMatchingTerritories())) {
+      throw new IllegalArgumentException("Not correct amount of bonus for trade in.");
+    }
 
     Risk next = new Risk(this);
 
     next.currentPlayerId = next.board.getTradedInId();
-    next.board.awardBonus(riskAction.playedCards().size(), next.currentPlayerId);
+    next.board.awardBonus(riskAction.getBonus(), next.currentPlayerId);
 
     return next;
   }

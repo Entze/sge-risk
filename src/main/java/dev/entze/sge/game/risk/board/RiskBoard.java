@@ -71,6 +71,8 @@ public class RiskBoard {
   private final int[] tradeInBonus;
   private final int tradeInTerritoryBonus = 2;
   private Set<Integer> tradeInTerritories;
+  private int minMatchingTerritories;
+  private int maxMatchingTerritories;
   private final int maxExtraBonus;
   private int tradeIns;
   private final int cardTypesWithoutJoker;
@@ -278,6 +280,8 @@ public class RiskBoard {
     initialReinforceMaybe = true;
 
     tradedInId = -5;
+    minMatchingTerritories = 0;
+    maxMatchingTerritories = 0;
 
     map = configuration.getMap();
   }
@@ -296,7 +300,8 @@ public class RiskBoard {
         riskBoard.involvedTroopsInAttacks, riskBoard.attackingId, riskBoard.defendingId,
         riskBoard.troops, riskBoard.hasOccupiedCountry, riskBoard.phase,
         riskBoard.initialSelectMaybe, riskBoard.initialReinforceMaybe, riskBoard.tradedInId,
-        riskBoard.tradeInTerritories, riskBoard.map);
+        riskBoard.tradeInTerritories, riskBoard.minMatchingTerritories,
+        riskBoard.maxMatchingTerritories, riskBoard.map);
   }
 
   private RiskBoard(int numberOfPlayers, int maxAttackerDice, int maxDefenderDice,
@@ -317,7 +322,7 @@ public class RiskBoard {
       Map<Integer, Integer> involvedTroopsInAttacks, int attackingId,
       int defendingId, int troops, boolean hasOccupiedCountry, RiskPhase phase,
       boolean initialSelectMaybe, boolean initialReinforceMaybe, int tradedInId,
-      Set<Integer> tradeInTerritories,
+      Set<Integer> tradeInTerritories, int minMatchingTerritories, int maxMatchingTerritories,
       String map) {
     this.numberOfPlayers = numberOfPlayers;
     this.maxAttackerDice = maxAttackerDice;
@@ -395,6 +400,10 @@ public class RiskBoard {
     this.initialReinforceMaybe = initialReinforceMaybe;
     this.tradedInId = tradedInId;
     this.tradeInTerritories = tradeInTerritories != null ? new HashSet<>(tradeInTerritories) : null;
+    this.minMatchingTerritories = Math
+        .max(0, Math.min(minMatchingTerritories, cardTypesWithoutJoker));
+    this.maxMatchingTerritories = Math
+        .max(this.minMatchingTerritories, Math.min(maxMatchingTerritories, cardTypesWithoutJoker));
     this.map = map;
   }
 
@@ -1078,6 +1087,11 @@ public class RiskBoard {
         c -> c.getCardType() != RiskCard.WILDCARD && c.getCardType() != RiskCard.JOKER
             && getTerritoryOccupantId(c.getTerritoryId()) == player).map(RiskCard::getTerritoryId)
         .collect(Collectors.toUnmodifiableSet());
+
+    minMatchingTerritories = tradeInTerritories.size();
+    maxMatchingTerritories = minMatchingTerritories + (int) cards.stream()
+        .filter(c -> c.getCardType() == RiskCard.WILDCARD)
+        .count();
     this.playerCards.get(player).removeAll(cards);
     if (phase != RiskPhase.REINFORCEMENT) {
       reinforcedTerritories.clear();
@@ -1086,40 +1100,34 @@ public class RiskBoard {
     tradedInId = player;
   }
 
-  Set<Integer> bonusCandidatesCardIds(Set<Integer> cardIds, int player) {
-    return cardIds.stream().filter(c -> {
-      RiskCard card = playerCards.get(player).get(c);
-      return card.getCardType() == RiskCard.WILDCARD
-          || getTerritoryOccupantId(card.getTerritoryId()) == player;
-    }).collect(
-        Collectors.toSet());
-  }
-
-  Set<Integer> bonusCandidatesTerritoryIds(Set<Integer> bonusCandidatesCardIds, int player) {
-    boolean containsWildcards = bonusCandidatesCardIds.stream()
-        .anyMatch(i -> playerCards.get(player).get(i).getCardType() == RiskCard.WILDCARD);
-
-    Set<Integer> territories = bonusCandidatesCardIds.stream()
-        .map(i -> playerCards.get(player).get(i))
-        .filter(c -> c.getCardType() != RiskCard.WILDCARD && c.getCardType() != RiskCard.JOKER)
-        .map(RiskCard::getTerritoryId).collect(Collectors.toSet());
-
-    if (!containsWildcards) {
-      return territories;
-    }
-
-    territories.addAll(this.territories.keySet().stream()
-        .filter(t -> getTerritoryOccupantId(t) == player && discardPile.stream()
-            .noneMatch(d -> d.getTerritoryId() == t)).collect(
-            Collectors.toSet()));
-
-    return territories;
-  }
-
   void awardBonus(int nrOfMatchingTerritories, int player) {
     this.nonDeployedReinforcements[player] +=
         getTradeInBonus() + nrOfMatchingTerritories * tradeInTerritoryBonus;
     tradeIns++;
+  }
+
+  public int getMinMatchingTerritories() {
+    return minMatchingTerritories;
+  }
+
+  public int getMaxMatchingTerritories() {
+    return maxMatchingTerritories;
+  }
+
+  int getNrOfBonusTerritories() {
+    return tradeInTerritories.size();
+  }
+
+  boolean inBonusTerritories(int id) {
+    return tradeInTerritories.contains(id);
+  }
+
+  public int getTradeInTerritoryBonus() {
+    return tradeInTerritoryBonus;
+  }
+
+  public Set<Integer> getBonusTerritories() {
+    return Collections.unmodifiableSet(tradeInTerritories);
   }
 
   int getTradedInId() {
