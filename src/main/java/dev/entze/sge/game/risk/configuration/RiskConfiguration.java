@@ -56,6 +56,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -68,10 +69,12 @@ import org.yaml.snakeyaml.representer.Representer;
 
 public class RiskConfiguration {
 
-  public static final RiskConfiguration RISK_DEFAULT_CONFIG = new RiskConfiguration(6,
+
+  public static final RiskConfiguration RISK_EUROPEAN_DEFAULT_CONFIG
+      = new RiskConfiguration(6,
       3, 2,
-      new int[] {50, 35, 30, 25, 20},
-      true, new int[] {4, 6, 8, 10, 12, 15}, 5, 3, 2,
+      new int[]{50, 35, 30, 25, 20},
+      true, new int[]{4, 6, 8, 10, 12, 15}, 5, 3, 2,
       true,
       3, 3,
       false, true, false, true,
@@ -83,7 +86,7 @@ public class RiskConfiguration {
               continentGroup(NORTH_AMERICA, AUSTRALIA),
               continentGroup(EUROPE, SOUTH_AMERICA, WILDCARD),
               continentGroup(EUROPE, AUSTRALIA, WILDCARD)),
-          new int[] {18, 24}, new int[] {2, 1}),
+          new int[]{18, 24}, new int[]{2, 1}),
       RiskContinentConfiguration.allContinents,
       RiskTerritoryConfiguration.allTerritories, ""
       + "zzj--------zzzn\n"
@@ -166,8 +169,100 @@ public class RiskConfiguration {
       + "zm+-+2+zzzzm\n"
       + "zp\\1/zzzzm\n"
       + "zq+zzzzn"
-
   );
+
+  public static final RiskConfiguration RISK_DEFAULT_CONFIG
+      = new RiskConfiguration(6,
+      3, 2,
+      new int[]{50, 35, 30, 25, 20},
+      true, new int[]{4, 6, 8, 10, 12, 15}, 5, 3, 2,
+      true,
+      3, 3,
+      false, true, false, false, Collections.emptyList(),
+      RiskContinentConfiguration.allContinents,
+      RiskTerritoryConfiguration.allTerritories, ""
+      + "zzj--------zzzn\n"
+      + "zz6+-----------/8\\zzzm\n"
+      + "zz5/l/zs+----+zn\n"
+      + "zc+--------+-----------------+-8[" + GREENLAND.getTerritoryId()
+      + "]8+--+k+---+w+-----+6\\1/-----------------------------+p\n"
+      + "f+-------+m/a\\f/2\\f/n/5\\m+-------+e+v\\o\n"
+      + "a+---/8/++-------------------+c\\3+---------+4|a---\\k+--+7+-+------------------+9\\8["
+      + SIBERIA.getTerritoryId() + "]5\\c[" + YAKUTSK.getTerritoryId() + "]i+-------------+9\n"
+      + "9/c/z1\\1/8+------+4+----/1+-------+-------\\5/6[" + SCANDINAVIA.getTerritoryId()
+      + "]6|j\\9+----+9+t/f+\n"
+      + "3+----+4[" + ALASKA.getTerritoryId() + "]7/f[" + NORTHWEST_TERRITORY.getTerritoryId()
+      + "]d+-------++8/7|3/7|3[" + ICELAND.getTerritoryId() + "]3|8+--1+6+7+j+f\\9\\4+j+--+h\\\n"
+      + "2/h/s/8/2\\6/8\\1/9+-------+7/3/6/1\\5/j/8[" + URAL.getTerritoryId()
+      + "]8\\_8+2/1\\h/6+5+4[" + KAMCHATKA.getTerritoryId() + "]4+6\n"
+      + "++6+-----------+--------------------+------+8|5\\---+a+j\\5/4+-----+3+---+j+k\\6/1\\/3+--------+2+---+6/1\\3/1\\8|6\n"
+      + "\\5++c|j/g|a\\q+---+---+7\\a/l\\k\\4/8[" + IRKUTSK.getTerritoryId()
+      + "]8\\/a+3+-+3+7+------\n"
+      + "1\\---+e|8[" + ALBERTA.getTerritoryId() + "]9/8[" + ONTARIO.getTerritoryId() + "]8|4["
+      + QUEBEC.getTerritoryId() + "]6\\p|3[" + GREAT_BRITAIN.getTerritoryId() + "]3|8+--------+b["
+      + UKRAINE.getTerritoryId() + "]b+------------+7\\2/j+-----+4|a\\5/7\n"
+      + "k/h/h/c|p+---+---+------1/4[" + NORTHERN_EUROPE.getTerritoryId()
+      + "]5\\l/e\\6/1/5/---+a|6\\3+-+9+---+8\n"
+      + "j/-----------------+---------9|8+---+u\\9+c\\j+g+----+-+-----+5\\2/------+7\\1/3\\l\n"
+      + "i/j/8\\8/7/z1+-------+---+----------+--+e/8[" + AFGHANISTAN.getTerritoryId()
+      + "]c/3\\b++g+5\\k\n"
+      + "h/j/a+------+-------+z1/4[" + WESTERN_EUROPE.getTerritoryId() + "]5/7[" + SOUTHERN_EUROPE
+      .getTerritoryId() + "]8\\c+l/5\\s|6+---+f\n"
+      + "g/9[" + WESTERN_UNITED_STATES.getTerritoryId() + "]9|i___/z5/a/\\h+---+7|k/7+----+5["
+      + MONGOLIA.getTerritoryId() + "]7+----+3+-----/5\\e\n"
+      + "f/k|h/z8+----+-----+2\\1/+------+-+3/5\\------+e+----+e\\b/6\\1/5+3[" + JAPAN
+      .getTerritoryId() + "]3+d\n"
+      + "f|d_______|6[" + EASTERN_UNITED_STATES.getTerritoryId()
+      + "]9/ze|9+b\\1/e\\c/6\\e+---------+8+6|6/e\n"
+      + "f|c|n/zc+--+---+4/|c+-----+a+------+---+8+--+t\\6+-+3+f\n"
+      + "f\\c|h_____/zc/8\\2/1|h/j\\f\\g[" + CHINA.getTerritoryId() + "]c+8\\1/g\n"
+      + "g\\------------g/zh/a+/2+----------------+l\\f+--+5+k\\8+h\n"
+      + "h\\b|4___________|zg/c\\1/i\\l\\9[" + INDIA.getTerritoryId() + "]8\\3/1\\k+p\n"
+      + "i\\a----/zp+-+e+9[" + EGYPT.getTerritoryId() + "]a\\8[" + MIDDLE_EAST.getTerritoryId()
+      + "]c+---+e+-+3\\j|p\n"
+      + "j\\b|zq/i\\k\\j/5\\e/5+---+3+--+-------+p\n"
+      + "k\\5[" + CENTRAL_AMERICA.getTerritoryId()
+      + "]4|zp/k+-------+------------+a+--+3/7+-+a+---+7\\1/3|x\n"
+      + "l\\a\\--\\zk+u\\c\\a\\2\\1/a|9/5+7+4+x\n"
+      + "m+--+b\\zi|d[" + NORTH_AFRICA.getTerritoryId() + "]h+c\\a\\2+b+5+--+7\\c\\w\n"
+      + "q+-----+6\\za+-----+v|d\\5+----+e\\5\\a+-+3[" + SIAM.getTerritoryId() + "]6+v\n"
+      + "x\\__4\\8+--+v/6|v+e\\5\\j+5+c\\8/w\n"
+      + "z1\\4+------+4+-----+n/7+--+r/9[" + EAST_AFRICA.getTerritoryId()
+      + "]6+-----+j\\4|d+3+--+x\n"
+      + "z2`-+-\\i\\l/c\\7+-----+7+----+l/l+3+e\\1/z2\n"
+      + "z7\\7[" + VENEZUELA.getTerritoryId() + "]a+-+h/e\\5/7\\5/7\\i/n\\1/g+z3\n"
+      + "z8\\b+-+6\\f/g+---+9\\3/9+-------+8/p+i\\z2\n"
+      + "z8/8+-+3+------+d/w\\1/h/8/zb\\z1\n"
+      + "z7+----+3/d+-----+6/y+8[" + CENTRAL_AFRICA.getTerritoryId()
+      + "]8/8/zb+-------+---------------+-------+5\n"
+      + "z6/6\\1/k+-----+z1\\f/8+zc|3[" + INDONESIA.getTerritoryId() + "]3|f|3[" + NEW_GUINEA
+      .getTerritoryId() + "]3|\n"
+      + "z6|7+s\\z1+---+9+8/1\\zb+-------+f+-------+5\n"
+      + "z7\\6|t+z|4\\9\\6/3\\zj\\c/1|d\n"
+      + "z8\\5+--+c[" + BRAZIL.getTerritoryId() + "]d|z+5\\9\\4/5\\zj\\a/2|d\n"
+      + "z9\\8+--+j+--+y/7+---------+--+7+-----+zd\\8/3|d\n"
+      + "za\\4[" + PERU.getTerritoryId() + "]6\\i|z2|k+------+5/zf\\3/----+--+--+3+-+4\n"
+      + "zb\\b\\h|z2\\j/6/5+zh+-+4/7\\1/3\\3\n"
+      + "zc+--+8\\g+z3|h+6/2[" + MADAGASCAR.getTerritoryId() + "]3|zg/6/9+5+2\n"
+      + "zg\\8\\e/z4\\7[" + SOUTH_AFRICA.getTerritoryId() + "]9|5|7+zb+---+6/h\\1\n"
+      + "zh+--------+9+--+z6\\g+5|6/zb/a/c[" + EASTERN_AUSTRALIA.getTerritoryId() + "]6+\n"
+      + "zh|9\\7/zb+e/6+-----+zb+a+---------+9/1\n"
+      + "zh|a\\5/zd\\9+--+zp|5[" + WESTERN_AUSTRALIA.getTerritoryId() + "]d/9+2\n"
+      + "zh|b+3/zf+7/zt|i/a|2\n"
+      + "zh|5[" + ARGENTINA.getTerritoryId() + "]6\\1/zg|6/zu+-------------+3/9+-+\n"
+      + "zh|d+zh+-----+zzb\\1/9/5\n"
+      + "zh|c/zzzz2+6+--+6\n"
+      + "zh|9+-+zzzz4\\4/a\n"
+      + "zh+8/zzzz8+--+b\n"
+      + "zi\\6/zzzzo\n"
+      + "zj\\4+zzzzp\n"
+      + "zk\\4\\zzzzo\n"
+      + "zl\\4\\zzzzn\n"
+      + "zm+-+2+zzzzm\n"
+      + "zp\\1/zzzzm\n"
+      + "zq+zzzzn"
+  );
+
   private static Yaml riskConfigurationYaml = null;
   private int maxNumberOfPlayers = 2;
   private int maxAttackerDice = 3;

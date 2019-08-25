@@ -102,7 +102,7 @@ public class RiskTest {
       territories.add(territory);
     });
     riskConfiguration.setTerritories(new ArrayList<>(territories));
-    riskConfiguration.setInitialTroops(new int[] {3});
+    riskConfiguration.setInitialTroops(new int[]{3});
     riskConfiguration.setMap("+-----+\n"
         + "|2[0]2|\n"
         + "+-----+\n"
@@ -266,7 +266,7 @@ public class RiskTest {
   public void test_game_doAction_initialSelect_2() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setMaxNumberOfPlayers(3);
-    config.setInitialTroops(new int[] {1});
+    config.setInitialTroops(new int[]{1});
     config.setChooseInitialTerritories(true);
 
     Risk risk = new Risk(config, 3);

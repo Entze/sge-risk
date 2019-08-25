@@ -50,8 +50,8 @@ public class RiskTerritoryConfiguration {
       ARTILLERY,
       NORTH_AMERICA,
       ALBERTA,
-      GREENLAND,
       EASTERN_UNITED_STATES,
+      GREENLAND,
       NORTHWEST_TERRITORY);
   public static final RiskTerritoryConfiguration QUEBEC = new RiskTerritoryConfiguration(
       ARTILLERY,
