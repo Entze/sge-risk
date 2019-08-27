@@ -125,7 +125,7 @@ public class RiskTest {
 
     String config = yaml.dump(RiskConfiguration.RISK_DEFAULT_CONFIG);
 
-    assertEquals(RiskConfiguration.RISK_DEFAULT_CONFIG, (RiskConfiguration) yaml.load(config));
+    assertEquals(RiskConfiguration.RISK_DEFAULT_CONFIG, yaml.load(config));
 
   }
 

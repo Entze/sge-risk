@@ -70,40 +70,33 @@ public class RiskBoard {
   private final boolean withCards;
   private final int[] tradeInBonus;
   private final int tradeInTerritoryBonus = 2;
-  private Set<Integer> tradeInTerritories;
-  private int minMatchingTerritories;
-  private int maxMatchingTerritories;
   private final int maxExtraBonus;
-  private int tradeIns;
   private final int cardTypesWithoutJoker;
-
   private final int reinforcementAtLeast;
   private final int reinforcementThreshold;
   private final boolean occupyOnlyWithAttackingArmies;
   private final boolean fortifyOnlyFromSingleTerritory;
   private final boolean fortifyOnlyWithNonFightingArmies;
   private final boolean withMissions;
-
   //board
   private final Graph<Integer, DefaultEdge> gameBoard;
   private final Map<Integer, RiskTerritory> territories;
   private final Map<Integer, Graph<Integer, DefaultEdge>> fortifyConnectivityGraph;
   private final Map<Integer, ConnectivityInspector<Integer, DefaultEdge>> fortifyConnectivityInspector;
-
-
   private final Deque<RiskCard> deckOfCards;
   private final List<RiskCard> discardPile;
   private final Set<RiskMission> allMissions;
   private final RiskMission[] playerMissions;
-
   private final Map<Integer, List<RiskCard>> playerCards;
-
   private final Map<Integer, RiskContinent> continents;
-
   private final int[] nonDeployedReinforcements;
   private final Set<Integer> reinforcedTerritories;
   private final Map<Integer, Integer> involvedTroopsInAttacks;
   private final String map;
+  private Set<Integer> tradeInTerritories;
+  private int minMatchingTerritories;
+  private int maxMatchingTerritories;
+  private int tradeIns;
   private int attackingId;
   private int defendingId;
   private int troops;
@@ -456,22 +449,54 @@ public class RiskBoard {
 
   }
 
+  /**
+   * Return the number of players participating in this game.
+   *
+   * @return the number of players participating in this game.
+   */
   public int getNumberOfPlayers() {
     return numberOfPlayers;
   }
 
+  /**
+   * Returns all territories mapped from their territoryId.
+   *
+   * @return a map of territories mapped by their territoryId.
+   */
   public Map<Integer, RiskTerritory> getTerritories() {
     return territories;
   }
 
+  /**
+   * Returns a set of all territoryIds present on this board. This is equivalent to
+   * getTerritories().keySet().
+   *
+   * @return a set of all territoryIds.
+   */
   public Set<Integer> getTerritoryIds() {
     return territories.keySet();
   }
 
+  /**
+   * Checks if a given territoryId is present on the board. This is equivalent to
+   * getTerritories().containsKey(territoryId).
+   *
+   * @param territoryId the id of the territory
+   * @return true iff present on the board, otherwise false.
+   */
   public boolean isTerritory(int territoryId) {
     return territories.containsKey(territoryId);
   }
 
+
+  /**
+   * Returns which player currently occupies the given territory. A negative number indicates either
+   * that noone has yet occupied this territory or that the territoryId does not exist on the board.
+   * Check with isTerritory(territoryId) to determine the difference.
+   *
+   * @param territoryId the id of the territory
+   * @return the id of the occupying player.
+   */
   public int getTerritoryOccupantId(int territoryId) {
     return territories.containsKey(territoryId) ? territories.get(territoryId)
         .getOccupantPlayerId()
@@ -484,6 +509,14 @@ public class RiskBoard {
     }
   }
 
+  /**
+   * Returns how many troops currently are stationed in the given territory. Zero indicates either
+   * that there are no troops stationed or that the territoryId does not exist on the board. Check
+   * with isTerritory(territoryId) to determine the difference.
+   *
+   * @param territoryId the id of the territory
+   * @return the id of the occupying player.
+   */
   public int getTerritoryTroops(int territoryId) {
     return territories.containsKey(territoryId) ? territories.get(territoryId).getTroops() : 0;
   }
@@ -613,26 +646,67 @@ public class RiskBoard {
     tradedInId = -5;
   }
 
+  /**
+   * Return a set of ids of the neighboring territories. An empty set indicates that the territoryId
+   * is not present on the board.
+   *
+   * @param territoryId the id of the territory
+   * @return a set of ids of the neighboring territories.
+   */
   public Set<Integer> neighboringTerritories(int territoryId) {
     return Graphs.neighborSetOf(gameBoard, territoryId);
   }
 
+  /**
+   * Return a set of ids of the neighboring territories which are not occupied with the same
+   * occupantId. An empty set indicates that the territoryId is not present on the board or that
+   * this territory is surrounded by friendly neighbors. Check with isTerritory(territoryId) to
+   * determine the difference.
+   *
+   * @param territoryId the id of the territory
+   * @return a set of ids of the neighboring enemy territories.
+   */
   public Set<Integer> neighboringEnemyTerritories(int territoryId) {
     final int self = getTerritoryOccupantId(territoryId);
     return Graphs.neighborSetOf(gameBoard, territoryId).stream()
         .filter(id -> getTerritoryOccupantId(id) != self).collect(Collectors.toSet());
   }
 
+  /**
+   * Return a set of ids of the neighboring territories which are not occupied with the same
+   * occupantId. An empty set indicates that the territoryId is not present on the board or that the
+   * territory is surrounded by enemy neighbors. Check with isTerritory(territoryId) to determine
+   * the difference.
+   *
+   * @param territoryId the id of the territory
+   * @return a set of ids of the neighboring friendly territories.
+   */
   public Set<Integer> neighboringFriendlyTerritories(int territoryId) {
     final int self = getTerritoryOccupantId(territoryId);
     return Graphs.neighborSetOf(gameBoard, territoryId).stream()
         .filter(id -> getTerritoryOccupantId(id) == self).collect(Collectors.toSet());
   }
 
+  /**
+   * Return the number of troops that can be moved from this territory. This is equal to
+   * getTerritoryTroops(territoryId) - 1. Note that if the territoryId does not exist this method
+   * will return -1.
+   *
+   * @param territoryId the id of the territory
+   * @return the number of mobile troops in a given territory.
+   */
   public int getMobileTroops(int territoryId) {
     return getTerritoryTroops(territoryId) - 1;
   }
 
+  /**
+   * Return the maximum number of troops that a territory can attack with. In games where occupying
+   * only with attacking troops is allowed this is equal to the number of mobile troops. In other
+   * games this is capped at the number of attacker dice.
+   *
+   * @param attackingId the id of the attacking territory
+   * @return the number of troops allowed to attack at once in a given territory.
+   */
   public int getMaxAttackingTroops(int attackingId) {
     int troops = getMobileTroops(attackingId);
     if (occupyOnlyWithAttackingArmies) {
@@ -642,25 +716,67 @@ public class RiskBoard {
     return Math.min(troops, getMaxAttackerDice());
   }
 
+  /**
+   * Check if two territories are neighbors. Also returns false if either id does not exist. This
+   * method is symmetrical however not reflexive or transitive.
+   *
+   * @param territoryId1 the id of the first territory
+   * @param territoryId2 the id of the second territory
+   * @return true iff the two territories differ and are neighbors.
+   */
   public boolean areNeighbors(int territoryId1, int territoryId2) {
     return gameBoard.containsEdge(territoryId1, territoryId2);
   }
 
+  /**
+   * Return a set of ids of territories which are occupied by the given player. An empty set
+   * indicates that the player has no longer occupied any territories or that the player does not
+   * exist. Check with playerId < getNumberOfPlayers() to determine the difference.
+   *
+   * @param playerId the id of the player
+   * @return a set of territories occupied by a given player.
+   */
   public Set<Integer> getTerritoriesOccupiedByPlayer(final int playerId) {
     return territories.entrySet().stream()
         .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId).map(Entry::getKey)
         .collect(Collectors.toSet());
   }
 
+  /**
+   * Return the number of territories currently occupied by the given player. Zero indicates that
+   * the player has no longer occupied any territories or that the player does not exist. Check with
+   * playerId < getNumberOfPlayers() to determine the difference.
+   *
+   * @param playerId the id of the player
+   * @return the number of territories occupied by a given player.
+   */
   public int getNrOfTerritoriesOccupiedByPlayer(final int playerId) {
     return Math.toIntExact(territories.entrySet().stream()
         .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId).count());
   }
 
+  /**
+   * Check if there is any territory occupied by the given player. False indicates that the player
+   * has no longer ouccpied any territories or that the player does not exits. Check with playerId <
+   * getNumberOfPlayers() to determine the difference.
+   *
+   * @param playerId the id of the player
+   * @return true iff there is any territory with the playerId as occupantId
+   */
   public boolean isPlayerStillAlive(final int playerId) {
     return territories.values().stream().anyMatch(t -> t.getOccupantPlayerId() == playerId);
   }
 
+  /**
+   * Return a set of ids of territories occupied by the given player with more than one troop
+   * stationed in it. An empty set indicates that there are no territories with more than one troop
+   * stationed left or that the player does not exist. Check with playerId < getNumberOfPlayers() to
+   * determine the difference.
+   *
+   * @param playerId the id of the player
+   * @return a set of ids of all the territories occupied by the given player with more than one
+   * troop stationed.
+   */
   public Set<Integer> getTerritoriesOccupiedByPlayerWithMoreThanOneTroops(final int playerId) {
     return territories.entrySet().stream()
         .filter(entry -> entry.getValue().getOccupantPlayerId() == playerId
@@ -711,7 +827,7 @@ public class RiskBoard {
     troops = 0;
   }
 
-  public int getMaxOccupy() {
+  int getMaxOccupy() {
     if (occupyOnlyWithAttackingArmies) {
       return troops;
     }
@@ -740,7 +856,7 @@ public class RiskBoard {
     phase = RiskPhase.ATTACK;
   }
 
-  public PriestLogic missionFulfilled(int player) {
+  PriestLogic missionFulfilled(int player) {
     if (playerMissions == null) {
       return PriestLogic.FALSE;
     }
@@ -763,7 +879,7 @@ public class RiskBoard {
     return PriestLogic.FALSE;
   }
 
-  private PriestLogic missionFulfilled(RiskMission mission) {
+  PriestLogic missionFulfilled(RiskMission mission) {
     if (mission.getRiskMissionType() == RiskMissionType.LIBERATE_PLAYER) {
       return PriestLogic
           .fromBoolean(mission.getTargetIds().stream().noneMatch(this::isPlayerStillAlive));
@@ -856,6 +972,14 @@ public class RiskBoard {
     return playerConqueredContinents;
   }
 
+  /**
+   * Return a set of ids which are fortifyable given that there are enough troops in the specified
+   * territory. An empty set either indicates that the territory does not exist or that it is
+   * surrounded by enemy neighbors.
+   *
+   * @param territoryId the id of the territory
+   * @return a set of ids which are fortifyable from the given territoryId.
+   */
   public Set<Integer> getFortifyableTerritories(int territoryId) {
     if (fortifyOnlyFromSingleTerritory) {
       return neighboringFriendlyTerritories(territoryId);
@@ -868,6 +992,16 @@ public class RiskBoard {
     return fortifyableTerritories;
   }
 
+  /**
+   * Check if the territory from fortifyingId can succesfully fortify fortifiedId. This requires
+   * depending on the rule set a path of friendly territories or them being neighbors. Note that
+   * this function also returns false if either territoryId does not exist.
+   *
+   * @param fortifyingId the territory from which is to be fortified from
+   * @param fortifiedId  the territory which is to be fortified
+   * @return true iff the territory associated with fortifyingId can fortify the territory
+   * associated with fortifiedId
+   */
   public boolean canFortify(int fortifyingId, int fortifiedId) {
     int occupant = getTerritoryOccupantId(fortifyingId);
     return occupant >= 0 && occupant == getTerritoryOccupantId(fortifiedId)
@@ -885,6 +1019,14 @@ public class RiskBoard {
     return fortifyOnlyFromSingleTerritory;
   }
 
+  /**
+   * Return the number of troops which are allowed to fortify from this territoryId. Under the
+   * default ruleset this is equal to the number of mobile troops. With
+   * fortifyOnlyWithNonFightingArmies this is the number of troops not involved in any attacks.
+   *
+   * @param territoryId the id of the territory
+   * @return the number of troops which are legal to fortify from
+   */
   public int getFortifyableTroops(int territoryId) {
     int troops = getTerritoryTroops(territoryId);
     if (fortifyOnlyWithNonFightingArmies) {
@@ -970,6 +1112,13 @@ public class RiskBoard {
         .collect(ImmutableMultiset.toImmutableMultiset()));
   }
 
+  /**
+   * Check if a given player could theoretically be able to trade in cards. Note that if withCards
+   * is false this function will always return false.
+   *
+   * @param player the id of the player
+   * @return true iff the given player has enough cards and they could contain a set.
+   */
   public boolean couldTradeInCards(int player) {
     if (!withCards || playerCards == null || !playerCards.containsKey(player)) {
       return false;
@@ -979,6 +1128,13 @@ public class RiskBoard {
     return containsTradeableSet(riskCards);
   }
 
+  /**
+   * Check if a given player has too many cards and has to trade in their cards at the next possible
+   * action. Note that if withCards is false this function will always return false.
+   *
+   * @param player the id of the player
+   * @return true iff the given player's card slots are full.
+   */
   public boolean hasToTradeInCards(int player) {
     return withCards && playerCards.containsKey(player)
         && playerCards.get(player).size() >= cardSlots();
@@ -1045,6 +1201,13 @@ public class RiskBoard {
         .collect(Collectors.toUnmodifiableSet());
   }
 
+  /**
+   * Return a immutable list view of the cards of a given player. Note that in uncanonical games
+   * this might contain wildcards.
+   *
+   * @param player the id of the player
+   * @return a list of cards of a given player.
+   */
   public List<RiskCard> getPlayerCards(int player) {
     return Collections
         .unmodifiableList(playerCards.getOrDefault(player, Collections.emptyList()));
@@ -1064,6 +1227,13 @@ public class RiskBoard {
         || playerCards.getOrDefault(player, Collections.emptyList()).size() >= cardSlots());
   }
 
+  /**
+   * Return the number of troops the nth trade in is worth. Note that the enumeration starts with 0,
+   * i.e. the first trade in is the 0th by this function. Returns 0 if n is negative.
+   *
+   * @param n the nth trade in, starting from 0
+   * @return the number of troops awarded by the nth trade in.
+   */
   public int getTradeInBonus(int n) {
     if (n < 0) {
       return 0;
@@ -1075,6 +1245,11 @@ public class RiskBoard {
     return tradeInBonus[n];
   }
 
+  /**
+   * Return the number of troops the next trade in is worth.
+   *
+   * @return the number of troops the next trade in is worth.
+   */
   public int getTradeInBonus() {
     return getTradeInBonus(tradeIns);
   }
@@ -1113,11 +1288,11 @@ public class RiskBoard {
     tradeIns++;
   }
 
-  public int getMinMatchingTerritories() {
+  int getMinMatchingTerritories() {
     return minMatchingTerritories;
   }
 
-  public int getMaxMatchingTerritories() {
+  int getMaxMatchingTerritories() {
     return maxMatchingTerritories;
   }
 
@@ -1129,22 +1304,45 @@ public class RiskBoard {
     return tradeInTerritories.contains(id);
   }
 
+  /**
+   * Return the number of troops it is worth that a set containing a card with a territory owned by
+   * the player is worth.
+   *
+   * @return the number of troops bonus per territory owned in a traded set.
+   */
   public int getTradeInTerritoryBonus() {
     return tradeInTerritoryBonus;
   }
 
-  public Set<Integer> getBonusTerritories() {
+
+  Set<Integer> getBonusTerritories() {
     return Collections.unmodifiableSet(tradeInTerritories);
   }
 
+  /**
+   * Return the number of cards left in the deck of cards.
+   *
+   * @return the number of cards left in the deck of cards.
+   */
   public int getCardsLeft() {
     return deckOfCards.size();
   }
 
+  /**
+   * Return a immutable view of the discarded pile.
+   *
+   * @return the discarded pile.
+   */
   public Collection<RiskCard> getDiscardedPile() {
     return Collections.unmodifiableList(discardPile);
   }
 
+  /**
+   * Return the number of cards in the game. This is equal to number of territories plus the number
+   * of jokers. Note that if withCards is false that this function will always return 0.
+   *
+   * @return the number of cards in the game.
+   */
   public int getNumberOfCards() {
     if (!withCards || playerCards == null || discardPile == null || deckOfCards == null) {
       return 0;
@@ -1194,7 +1392,6 @@ public class RiskBoard {
     this.deckOfCards.addAll(deckOfCards);
 
   }
-
 
   private void stripOutCardInformation(int player) {
     for (Entry<Integer, List<RiskCard>> playerCard : playerCards.entrySet()) {
