@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -115,11 +116,14 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   }
 
   private static Risk stripOutUnknownInformation(Risk game) {
+    game.board.stripOutUnknownInformation();
     return game;
   }
 
   private static Risk stripOutUnknownInformation(Risk game, int player) {
     Risk next = stripOutUnknownInformation(game);
+    next.board.stripOutUnknownInformation(player);
+
     return next;
   }
 
@@ -262,7 +266,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     Map<Integer, RiskTerritory> territories = board.getTerritories().entrySet().stream().filter(
         t -> t.getValue().getOccupantPlayerId() == currentPlayerId &&
-            !board.isReinforcedAlready(t.getKey()) && board.inBonusTerritories(t.getKey()))
+            !board.isReinforcedAlready(t.getKey()))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
     if (territories.size() == 1) {
@@ -271,20 +275,17 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       }
     } else {
 
-      Set<Integer> bonusTerritories = board.getBonusTerritories().stream()
-          .filter(i -> !board.isReinforcedAlready(i)).collect(Collectors.toUnmodifiableSet());
       final int tradeInTerritoryBonus = board.getTradeInTerritoryBonus();
-      final int promisedReinforcements = bonusTerritories.size() * tradeInTerritoryBonus;
-
-      for (Integer bonusTerritory : bonusTerritories) {
-        for (int r = tradeInTerritoryBonus; r < reinforcementsLeft - promisedReinforcements; r++) {
-          actions.add(RiskAction.reinforce(bonusTerritory, r));
-        }
-      }
+      final int promisedReinforcements = (int) (territories.keySet().stream()
+          .filter(t -> board.inBonusTerritories(t)).count() * tradeInTerritoryBonus);
 
       for (Entry<Integer, RiskTerritory> territory : territories.entrySet()) {
-        int territoryId = territory.getKey();
-        for (int r = 1; r <= (reinforcementsLeft - promisedReinforcements); r++) {
+        final int territoryId = territory.getKey();
+        final boolean inBonusTerritories = board.inBonusTerritories(territoryId);
+        for (int r = (inBonusTerritories ? tradeInTerritoryBonus : 1);
+            r <= (reinforcementsLeft - (promisedReinforcements - (inBonusTerritories
+                ? tradeInTerritoryBonus : 0)));
+            r++) {
           actions.add(RiskAction.reinforce(territoryId, r));
         }
       }
@@ -369,9 +370,13 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     } else if (board.isReinforcementPhase()) {
       int reinforcementsLeft = board.reinforcementsLeft(currentPlayerId);
       int reinforced = riskAction.reinforcedId();
-      return 1 <= riskAction.troops() && riskAction.troops() <= reinforcementsLeft && board
-          .isTerritory(reinforced) && !board.isReinforcedAlready(reinforced)
-          && board.getTerritoryOccupantId(reinforced) == currentPlayerId;
+      int reinforceOptionsLeft = (int) board.getTerritoriesOccupiedByPlayer(currentPlayerId)
+          .stream().filter(t -> !board.isReinforcedAlready(t)).count();
+      return 1 <= riskAction.troops() && riskAction.troops() <= reinforcementsLeft && (
+          !board.inBonusTerritories(reinforced) || board.getTradeInTerritoryBonus() <= riskAction
+              .troops()) && board.isTerritory(reinforced) && !board.isReinforcedAlready(reinforced)
+          && board.getTerritoryOccupantId(reinforced) == currentPlayerId && (
+          reinforceOptionsLeft != 1 || riskAction.troops() == reinforcementsLeft);
     } else if (board.isAttackPhase()) {
 
       int attackingId = riskAction.attackingId();
@@ -582,6 +587,23 @@ public class Risk implements Game<RiskAction, RiskBoard> {
           errorMsg = errorMsg.concat(", ");
         }
         errorMsg = errorMsg.concat(troops + " is an illegal number of troops");
+      } else if (board.inBonusTerritories(reinforcedId) && troops < board
+          .getTradeInTerritoryBonus()) {
+        if (!errorMsg.isEmpty()) {
+          errorMsg = errorMsg.concat(", ");
+        }
+        errorMsg = errorMsg.concat(
+            "Reinforced territory is required to be reinforced with at least " + board
+                .getTradeInTerritoryBonus() + " troops");
+      } else {
+        int reinforceOptionsLeft = (int) board.getTerritoriesOccupiedByPlayer(currentPlayerId)
+            .stream().filter(t -> !board.isReinforcedAlready(t)).count();
+        if (reinforceOptionsLeft == 1 && troops != board.reinforcementsLeft(currentPlayerId)) {
+          if (!errorMsg.isEmpty()) {
+            errorMsg = errorMsg.concat(", ");
+          }
+          errorMsg = errorMsg.concat("Need to deploy all reinforcements");
+        }
       }
 
       if (!errorMsg.isEmpty()) {
@@ -758,6 +780,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
     if (board.isAttack()) {
       return calculateCasualties();
+    } else if (currentPlayerId == BONUS_PLAYER) {
+      return calculateBonus();
     }
 
     return null;
@@ -786,6 +810,34 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     return RiskAction.casualties(attacker, defender);
+  }
+
+  private RiskAction calculateBonus() {
+    int min = board.getMinMatchingTerritories();
+    int max = board.getMaxMatchingTerritories();
+
+    if (max - min == 0) {
+      return RiskAction.bonusCards(max);
+    }
+
+    int drawn = max - min;
+    int nrOfCardsInPool =
+        (board.getNumberOfCards() + drawn) - (board.getDiscardedPile().size() + board
+            .getPlayerCards(board.getTradedInId()).size());
+
+    int bonus = min;
+
+    List<Integer> pool = IntStream.range(0, nrOfCardsInPool).boxed()
+        .collect(Collectors.toCollection(LinkedList::new));
+    Collections.shuffle(pool);
+
+    for (int i = 0; i < drawn; i++) {
+      if (pool.get(i) < drawn) {
+        bonus++;
+      }
+    }
+
+    return RiskAction.bonusCards(bonus);
   }
 
   @Override

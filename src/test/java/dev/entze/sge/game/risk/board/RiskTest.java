@@ -325,7 +325,7 @@ public class RiskTest {
   }
 
   @Test
-  public void test_game_doAction_cards() {
+  public void test_game_doAction_cards_1() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setChooseInitialTerritories(true);
     config.setFortifyOnlyFromSingleTerritory(true);
@@ -356,9 +356,72 @@ public class RiskTest {
 
     assertEquals(Set.of(RiskAction.playCards(0)), risk.getPossibleActions());
     risk = (Risk) risk.doAction(RiskAction.playCards(0));
-    assertTrue(risk.getPossibleActions().stream().allMatch(RiskAction::isBonus));
-    //TODO: >=4 -> risk.getCurrentPlayer() is not correct
-    // assertEquals(4, risk.getBoard().reinforcementsLeft(risk.getCurrentPlayer()));
+    assertTrue(
+        risk.getPossibleActions().contains(RiskAction.bonusCards(0)) || risk.getPossibleActions()
+            .contains(RiskAction.bonusCards(1)));
+    risk = (Risk) risk.doAction(risk.determineNextAction());
+
+    int reinforcementsLeft = risk.getBoard().reinforcementsLeft(risk.getCurrentPlayer());
+    assertTrue("Was: " + reinforcementsLeft, 4 == reinforcementsLeft || reinforcementsLeft == 6);
+
+    Set<RiskAction> expected = Stream.concat(
+        IntStream.rangeClosed(2, 4).mapToObj(t -> RiskAction.reinforce(0, t)),
+        IntStream.rangeClosed(2, 4).mapToObj(t -> RiskAction.reinforce(1, t)))
+        .collect(Collectors.toCollection(HashSet::new));
+
+    Set<RiskAction> actual = risk.getPossibleActions();
+
+    assertTrue("Expected: " + expected + " Actual: " + actual, actual.containsAll(expected));
+
+    if (reinforcementsLeft == 4) {
+      assertEquals("Expected: " + expected + " Actual: " + actual, expected.size() + 2,
+          actual.size());
+    } else {
+      assertEquals("Expected: " + expected + " Actual: " + actual, expected.size() + 3,
+          actual.size());
+    }
+
+  }
+
+  @Test
+      public void test_game_doAction_cards_2() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setChooseInitialTerritories(true);
+    config.setFortifyOnlyFromSingleTerritory(true);
+    config.setFortifyOnlyWithNonFightingArmies(false);
+    config.setCardTypesWithoutJoker(1);
+    config.setNumberOfJokers(0);
+    Risk risk = new Risk(config, 2);
+
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 0, 3));
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+    risk = (Risk) risk.doAction(RiskAction.occupy(2));
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    int player = risk.getCurrentPlayer();
+    int cards = risk.getBoard().getPlayerCards(player).size();
+    risk = (Risk) risk.doAction(RiskAction.fortify(1, 0, 1));
+    assertEquals(cards + 1, risk.getBoard().getPlayerCards(player).size());
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(2, 3));
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+
+    Risk playerRisk = (Risk) risk.getGame(risk.getCurrentPlayer());
+
+    assertEquals(Set.of(RiskAction.playCards(0)), playerRisk.getPossibleActions());
+    playerRisk = (Risk) playerRisk.doAction(RiskAction.playCards(0));
+    assertTrue(
+        playerRisk.getPossibleActions().contains(RiskAction.bonusCards(0)) || playerRisk.getPossibleActions()
+            .contains(RiskAction.bonusCards(1)));
+
+    playerRisk.determineNextAction(); //TODO
   }
 
   @Test

@@ -41,4 +41,4 @@ territories:
     territoryId: 0
 tradeInBonus: [1]
 withCards: true
-withMissions: true
+withMissions: false

@@ -135,7 +135,7 @@ public class RiskAction {
   }
 
   public boolean isBonus() {
-    return srcId == BONUS_ID && targetId == CARD_ID;
+    return srcId == BONUS_ID && targetId == BONUS_ID;
   }
 
   @Override

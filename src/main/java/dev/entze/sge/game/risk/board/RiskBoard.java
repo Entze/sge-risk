@@ -1011,7 +1011,7 @@ public class RiskBoard {
    * Checks if the slot is a tradeable set.
    *
    * @param slotIds - the ids of the set
-   * @param player - the player
+   * @param player  - the player
    * @return true if it is a valid set
    */
   private boolean checkSlotCandidateDefault(Set<Integer> slotIds, int player) {
@@ -1088,14 +1088,21 @@ public class RiskBoard {
             && getTerritoryOccupantId(c.getTerritoryId()) == player).map(RiskCard::getTerritoryId)
         .collect(Collectors.toUnmodifiableSet());
 
-    minMatchingTerritories = tradeInTerritories.size();
-    maxMatchingTerritories = minMatchingTerritories + (int) cards.stream()
-        .filter(c -> c.getCardType() == RiskCard.WILDCARD)
+    Set<Integer> discarded = this.discardPile.stream().map(RiskCard::getTerritoryId).collect(
+        Collectors.toUnmodifiableSet());
+
+    long maxPossible = territories.entrySet().stream().filter(
+        t -> t.getValue().getOccupantPlayerId() == player && !discarded.contains(t.getKey()))
         .count();
+
+    long numberOfWildcards = cards.stream().filter(c -> c.getCardType() == RiskCard.WILDCARD)
+        .count();
+
+    minMatchingTerritories = tradeInTerritories.size();
+    maxMatchingTerritories =
+        minMatchingTerritories + (int) Math.min(numberOfWildcards, maxPossible);
     this.playerCards.get(player).removeAll(cards);
-    if (phase != RiskPhase.REINFORCEMENT) {
-      reinforcedTerritories.clear();
-    }
+    reinforcedTerritories.clear();
     phase = RiskPhase.REINFORCEMENT;
     tradedInId = player;
   }
@@ -1130,6 +1137,22 @@ public class RiskBoard {
     return Collections.unmodifiableSet(tradeInTerritories);
   }
 
+  public int getCardsLeft() {
+    return deckOfCards.size();
+  }
+
+  public Collection<RiskCard> getDiscardedPile() {
+    return Collections.unmodifiableList(discardPile);
+  }
+
+  public int getNumberOfCards() {
+    if (!withCards || playerCards == null || discardPile == null || deckOfCards == null) {
+      return 0;
+    }
+    return playerCards.values().stream().mapToInt(List::size).sum() + discardPile.size()
+        + deckOfCards.size();
+  }
+
   int getTradedInId() {
     return tradedInId;
   }
@@ -1150,6 +1173,35 @@ public class RiskBoard {
       Collections.shuffle(discardPile);
       deckOfCards.addAll(discardPile);
       discardPile.clear();
+    }
+  }
+
+  void stripOutUnknownInformation() {
+    stripOutCardInformation();
+  }
+
+  void stripOutUnknownInformation(int player) {
+    stripOutCardInformation(player);
+  }
+
+  private void stripOutCardInformation() {
+    List<RiskCard> deckOfCards = this.deckOfCards.stream().map(c -> RiskCard.wildcard())
+        .collect(Collectors.toCollection(ArrayList::new));
+
+    Collections.shuffle(deckOfCards);
+
+    this.deckOfCards.clear();
+    this.deckOfCards.addAll(deckOfCards);
+
+  }
+
+
+  private void stripOutCardInformation(int player) {
+    for (Entry<Integer, List<RiskCard>> playerCard : playerCards.entrySet()) {
+      int playerSlot = playerCard.getKey();
+      if (playerSlot != player) {
+        playerCards.get(playerSlot).replaceAll(c -> RiskCard.wildcard());
+      }
     }
   }
 
