@@ -731,7 +731,7 @@ public class RiskBoard {
   /**
    * Return a set of ids of territories which are occupied by the given player. An empty set
    * indicates that the player has no longer occupied any territories or that the player does not
-   * exist. Check with playerId < getNumberOfPlayers() to determine the difference.
+   * exist. Check if playerId is less than getNumberOfPlayers() to determine the difference.
    *
    * @param playerId the id of the player
    * @return a set of territories occupied by a given player.
@@ -744,8 +744,8 @@ public class RiskBoard {
 
   /**
    * Return the number of territories currently occupied by the given player. Zero indicates that
-   * the player has no longer occupied any territories or that the player does not exist. Check with
-   * playerId < getNumberOfPlayers() to determine the difference.
+   * the player has no longer occupied any territories or that the player does not exist. Check if
+   * playerId is less than getNumberOfPlayers() to determine the difference.
    *
    * @param playerId the id of the player
    * @return the number of territories occupied by a given player.
@@ -757,8 +757,8 @@ public class RiskBoard {
 
   /**
    * Check if there is any territory occupied by the given player. False indicates that the player
-   * has no longer ouccpied any territories or that the player does not exits. Check with playerId <
-   * getNumberOfPlayers() to determine the difference.
+   * has no longer occupied any territories or that the player does not exits. Check if playerId is
+   * less getNumberOfPlayers() to determine the difference.
    *
    * @param playerId the id of the player
    * @return true iff there is any territory with the playerId as occupantId
@@ -770,8 +770,8 @@ public class RiskBoard {
   /**
    * Return a set of ids of territories occupied by the given player with more than one troop
    * stationed in it. An empty set indicates that there are no territories with more than one troop
-   * stationed left or that the player does not exist. Check with playerId < getNumberOfPlayers() to
-   * determine the difference.
+   * stationed left or that the player does not exist. Check if playerId is less than
+   * getNumberOfPlayers() to determine the difference.
    *
    * @param playerId the id of the player
    * @return a set of ids of all the territories occupied by the given player with more than one
@@ -998,7 +998,7 @@ public class RiskBoard {
    * this function also returns false if either territoryId does not exist.
    *
    * @param fortifyingId the territory from which is to be fortified from
-   * @param fortifiedId  the territory which is to be fortified
+   * @param fortifiedId the territory which is to be fortified
    * @return true iff the territory associated with fortifyingId can fortify the territory
    * associated with fortifiedId
    */
@@ -1167,7 +1167,7 @@ public class RiskBoard {
    * Checks if the slot is a tradeable set.
    *
    * @param slotIds - the ids of the set
-   * @param player  - the player
+   * @param player - the player
    * @return true if it is a valid set
    */
   private boolean checkSlotCandidateDefault(Set<Integer> slotIds, int player) {
