@@ -353,6 +353,9 @@ public class Risk implements Game<RiskAction, RiskBoard> {
         int attackerCasualties = riskAction.attackerCasualties();
         int defenderCasualties = riskAction.defenderCasualties();
         return attackerCasualties + defenderCasualties == armiesFought;
+      } else if (currentPlayerId == BONUS_PLAYER) {
+        return riskAction.isBonus() && board.getMinMatchingTerritories() <= riskAction.getBonus()
+            && riskAction.getBonus() <= board.getMaxMatchingTerritories();
       }
     } else if (isInitialSelect()) {
       int selected = riskAction.selected();

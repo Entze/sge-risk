@@ -2,6 +2,7 @@ package dev.entze.sge.game.risk.board;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -32,7 +33,7 @@ public class RiskTest {
 
   private final String simpleConfigYaml =
       "!!dev.entze.sge.game.risk.configuration.RiskConfiguration\n"
-          + "cardTypesWithoutJoker: 3\n"
+          + "cardTypesWithoutJoker: 2\n"
           + "chooseInitialTerritories: false\n"
           + "continents:\n"
           + "- {continentId: 0, troopBonus: 1}\n"
@@ -55,7 +56,7 @@ public class RiskTest {
           + "maxExtraBonus: 1\n"
           + "maxNumberOfPlayers: 2\n"
           + "missions: []\n"
-          + "numberOfJokers: 2\n"
+          + "numberOfJokers: 1\n"
           + "occupyOnlyWithAttackingArmies: false\n"
           + "reinforcementAtLeast: 3\n"
           + "reinforcementThreshold: 3\n"
@@ -64,7 +65,7 @@ public class RiskTest {
           + "  connects: [0, 2]\n"
           + "  continentId: 0\n"
           + "  territoryId: 1\n"
-          + "- cardType: 1\n"
+          + "- cardType: 2\n"
           + "  connects: [0, 1]\n"
           + "  continentId: 0\n"
           + "  territoryId: 2\n"
@@ -74,7 +75,7 @@ public class RiskTest {
           + "  territoryId: 0\n"
           + "tradeInBonus: [1]\n"
           + "withCards: true\n"
-          + "withMissions: true\n";
+          + "withMissions: false\n";
 
   @Test
   public void test_yaml_dump_0() {
@@ -102,7 +103,7 @@ public class RiskTest {
       territories.add(territory);
     });
     riskConfiguration.setTerritories(new ArrayList<>(territories));
-    riskConfiguration.setInitialTroops(new int[]{3});
+    riskConfiguration.setInitialTroops(new int[] {3});
     riskConfiguration.setMap("+-----+\n"
         + "|2[0]2|\n"
         + "+-----+\n"
@@ -266,7 +267,7 @@ public class RiskTest {
   public void test_game_doAction_initialSelect_2() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setMaxNumberOfPlayers(3);
-    config.setInitialTroops(new int[]{1});
+    config.setInitialTroops(new int[] {1});
     config.setChooseInitialTerritories(true);
 
     Risk risk = new Risk(config, 3);
@@ -327,6 +328,11 @@ public class RiskTest {
   @Test
   public void test_game_doAction_cards_1() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    for (RiskTerritoryConfiguration territory : config.getTerritories()) {
+      if (territory.getCardType() != 1) {
+        territory.setCardType(1);
+      }
+    }
     config.setChooseInitialTerritories(true);
     config.setFortifyOnlyFromSingleTerritory(true);
     config.setFortifyOnlyWithNonFightingArmies(false);
@@ -384,8 +390,13 @@ public class RiskTest {
   }
 
   @Test
-      public void test_game_doAction_cards_2() {
+  public void test_game_doAction_cards_2() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    for (RiskTerritoryConfiguration territory : config.getTerritories()) {
+      if (territory.getCardType() != 1) {
+        territory.setCardType(1);
+      }
+    }
     config.setChooseInitialTerritories(true);
     config.setFortifyOnlyFromSingleTerritory(true);
     config.setFortifyOnlyWithNonFightingArmies(false);
@@ -418,7 +429,8 @@ public class RiskTest {
     assertEquals(Set.of(RiskAction.playCards(0)), playerRisk.getPossibleActions());
     playerRisk = (Risk) playerRisk.doAction(RiskAction.playCards(0));
     assertTrue(
-        playerRisk.getPossibleActions().contains(RiskAction.bonusCards(0)) || playerRisk.getPossibleActions()
+        playerRisk.getPossibleActions().contains(RiskAction.bonusCards(0)) || playerRisk
+            .getPossibleActions()
             .contains(RiskAction.bonusCards(1)));
 
     playerRisk.determineNextAction(); //TODO
@@ -1064,4 +1076,57 @@ public class RiskTest {
     }
   }
   */
+
+  @Test
+  public void test_fullGame() {
+    RiskConfiguration riskConfiguration = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    riskConfiguration.setChooseInitialTerritories(true);
+    Risk risk = new Risk(riskConfiguration, 2);
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(2));
+    risk = (Risk) risk.doAction(RiskAction.select(0));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+    risk = (Risk) risk.doAction(RiskAction.select(1));
+
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 2, 3));
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.occupy(3));
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(0, 2, 3));
+    risk = (Risk) risk.doAction(RiskAction.casualties(1, 1));
+    risk = (Risk) risk.doAction(RiskAction.attack(0, 2, 2));
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+    risk = (Risk) risk.doAction(RiskAction.occupy(2));
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(1, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(1, 2, 3));
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 2));
+    risk = (Risk) risk.doAction(RiskAction.occupy(1));
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.reinforce(0, 3));
+    risk = (Risk) risk.doAction(RiskAction.attack(0, 2, 3));
+    risk = (Risk) risk.doAction(RiskAction.casualties(0, 1));
+    risk = (Risk) risk.doAction(RiskAction.occupy(1));
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+    risk = (Risk) risk.doAction(RiskAction.endPhase());
+
+    assertTrue(risk.getBoard().hasToTradeInCards(risk.getCurrentPlayer()));
+    assertTrue(risk.getBoard().canTradeInAsSet(Set.of(0, 1), risk.getCurrentPlayer()));
+    risk = (Risk) risk.doAction(RiskAction.playCards(0, 1));
+    Set<RiskAction> possibleActions = risk.getPossibleActions();
+    assertTrue(possibleActions.stream().allMatch(RiskAction::isBonus));
+    assertEquals(1, possibleActions.size());
+
+    RiskAction determinedAction = risk.determineNextAction();
+    assertNotEquals(null, determinedAction);
+    assertTrue(risk.isValidAction(determinedAction));
+
+
+  }
 }
