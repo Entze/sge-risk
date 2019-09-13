@@ -1,0 +1,41 @@
+#+TITLE: Developing an agent for sge-risk
+#+AUTHOR: Lukas Grassauer
+#+EMAIL: entze@grassauer.eu
+#+DATE: last changed: 2019-09-13
+
+This document assumes that you have read "AGENT_GUIDE"
+
+* Running a game of risk
+
+#+BEGIN_SRC bash
+
+java -jar sge-1.0.0.jar match
+ --file=sge-risk-1.0.0.jar
+ --directory=agents
+
+#+END_SRC
+
+If you want specific to play against each other add them via ~--file~ instead of
+~--directory~ or use their Agent-Name like so:
+
+#+BEGIN_SRC bash
+
+java -jar sge-1.0.0.jar match
+ --file=sge-risk-1.0.0.jar
+ --directory=agents
+ -a MctsAgent AlphaBetaAgent
+
+#+END_SRC
+
+Note that the agents play in that exact order.
+
+* Running a tournament
+
+#+BEGIN_SRC bash
+
+java -jar sge-1.0.0.jar tournament
+ --file=sge-risk-1.0.0.jar
+ --directory=agents
+ --mode="Double_Round_Robin"
+
+#+END_SRC
