@@ -20,6 +20,7 @@ or cavalry, and cannon or artillery as well as the joker. There are two jokers
 and 42 cards other cards with each exactly one territory associated with them,
 while the jokers do not have any association with territories.
 
+
 *** The Board
 
 There are 42 territories where some are symmetrically connected. These
@@ -143,6 +144,7 @@ play would be 0 3 2 1.
 Once each of the territories is occupied by a single army, the remaining armies
 will be placed one at an action onto the players territories.
 
+
 *** The Play
 
 Note: the number of mobile armies is equal to the number of armies in a
@@ -260,3 +262,6 @@ turn in more if their cards allow it.
 Should a player turn in a set which holds cards that are associated with
 territories that they occupy, additional two armies are awarded. However the
 player must reinforce each associated territory with at least two armies.
+
+Immediately after trading in a set the cards are added to the discard pile, which
+is reshuffled and added to the deck of cards should it ever deplete.
