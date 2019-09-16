@@ -80,7 +80,7 @@ publishing {
             artifact javadocJar
             pom {
                 name = project.getName()
-                description = "The core engine library, needed to implement games and agents."
+                description = "A clone of the game \"Risk\" implemented in sge."
                 licenses {
                     license {
                         name = "GNU Affero General Public License version 3"
@@ -97,14 +97,14 @@ publishing {
                 }
 
                 scm {
-                    url = "https://gitlab.com/Entze/strategy-game-engine"
-                    connection = "https://gitlab.com/Entze/strategy-game-engine.git"
-                    developerConnection = "git@gitlab.com:Entze/strategy-game-engine.git"
+                    url = "https://gitlab.com/Entze/sge-risk"
+                    connection = "https://gitlab.com/Entze/sge-risk.git"
+                    developerConnection = "git@gitlab.com:Entze/sge-risk.git"
                 }
             }
             repositories {
                 maven {
-                    url = "https://jcenter.bintray.com/at/ac/tuwien/ifs/sge/sge/"
+                    url = "https://jcenter.bintray.com/at/ac/tuwien/ifs/sge/sge-risk/"
                 }
             }
         }
