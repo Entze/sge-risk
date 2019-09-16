@@ -32,7 +32,7 @@ import org.yaml.snakeyaml.Yaml;
 public class RiskTest {
 
   private final String simpleConfigYaml =
-      "!!dev.entze.sge.game.risk.configuration.RiskConfiguration\n"
+      "!!at.ac.tuwien.ifs.sge.game.risk.configuration.RiskConfiguration\n"
           + "cardTypesWithoutJoker: 2\n"
           + "chooseInitialTerritories: false\n"
           + "continents:\n"

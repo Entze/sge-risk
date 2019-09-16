@@ -1,4 +1,4 @@
-!!dev.entze.sge.game.risk.configuration.RiskConfiguration
+!!at.ac.tuwien.ifs.sge.game.risk.configuration.RiskConfiguration
 cardTypesWithoutJoker: 2
 chooseInitialTerritories: false
 continents:
