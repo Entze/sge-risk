@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'idea'
     id 'com.github.johnrengelman.shadow' version '4.0.2'
+    id "com.jfrog.bintray" version "1.8.4"
 }
 
 group 'at.ac.tuwien.ifs.sge'
@@ -24,6 +25,20 @@ dependencies {
     testCompile 'com.pholser:junit-quickcheck-generators:0.9'
 }
 
+bintray {
+    user = "${bintrayName}"
+    key = "${bintrayKey}"
+    publications = ['mavenPublication']
+    pkg {
+        repo = 'StrategyGameEngine'
+        name = project.getName()
+        version {
+            name = project.getVersion()
+            released = new Date()
+        }
+    }
+}
+
 jar {
     manifest {
         attributes 'Sge-Type': 'game'
@@ -40,6 +55,12 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
+javadoc {
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
+}
+
 task javadocJar(type: Jar, dependsOn: javadoc) {
     archiveClassifier.set('javadoc')
     from javadoc.destinationDir
@@ -48,4 +69,43 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 artifacts {
     archives sourcesJar
     archives javadocJar
+}
+
+publishing {
+    publications {
+        mavenPublication(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            pom {
+                name = project.getName()
+                description = "The core engine library, needed to implement games and agents."
+                licenses {
+                    license {
+                        name = "GNU Affero General Public License version 3"
+                        url = "https://opensource.org/licenses/agpl-v3.html"
+                        distribution = "repo"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "entze"
+                        name = "Lukas Grassauer"
+                        email = "entze@grassauer.eu"
+                    }
+                }
+
+                scm {
+                    url = "https://gitlab.com/Entze/strategy-game-engine"
+                    connection = "https://gitlab.com/Entze/strategy-game-engine.git"
+                    developerConnection = "git@gitlab.com:Entze/strategy-game-engine.git"
+                }
+            }
+            repositories {
+                maven {
+                    url = "https://jcenter.bintray.com/at/ac/tuwien/ifs/sge/sge/"
+                }
+            }
+        }
+    }
 }
