@@ -1,8 +1,8 @@
 package dev.entze.sge.game.risk.board;
 
-import dev.entze.sge.game.ActionRecord;
-import dev.entze.sge.game.Dice;
-import dev.entze.sge.game.Game;
+import at.ac.tuwien.ifs.sge.game.ActionRecord;
+import at.ac.tuwien.ifs.sge.game.Dice;
+import at.ac.tuwien.ifs.sge.game.Game;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.util.PriestLogic;
 import java.util.ArrayList;

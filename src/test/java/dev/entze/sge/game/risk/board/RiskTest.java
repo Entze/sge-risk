@@ -9,7 +9,7 @@ import static org.junit.Assert.fail;
 import com.pholser.junit.quickcheck.From;
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
-import dev.entze.sge.game.ActionRecord;
+import at.ac.tuwien.ifs.sge.game.ActionRecord;
 import dev.entze.sge.game.risk.configuration.RiskConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskContinentConfiguration;
 import dev.entze.sge.game.risk.configuration.RiskTerritoryConfiguration;
