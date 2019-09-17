@@ -43,7 +43,7 @@ bintray {
 jar {
     manifest {
         attributes 'Sge-Type': 'game'
-        attributes 'Game-Class': 'dev.entze.sge.game.risk.board.Risk'
+        attributes 'Game-Class': 'at.ac.tuwien.ifs.sge.game.risk.board.Risk'
     }
 }
 
