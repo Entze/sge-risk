@@ -3,7 +3,7 @@
 #+EMAIL: entze@grassauer.eu
 #+DATE: last changed: 2019-09-13
 
-This document assumes that you have read "AGENT_GUIDE"
+Also consider reading the manual for Strategy Game Engine
 
 * Running a game of risk
 
@@ -39,3 +39,48 @@ java -jar sge-1.0.0.jar tournament
  --mode="Double_Round_Robin"
 
 #+END_SRC
+
+* Implementing an agent
+
+The agent has to implement the Java-Interface
+~at.ac.tuwien.ifs.sge.agent.GameAgent<? extends Game<A, ?>, A>~ where ~A~ is the
+type of the action, provided by ~sge~.
+
+Before each turn the game is stripped from player-specific information and then
+submitted to the agent via the ~computeNextAction()~ method, alongside the
+allowed computational time as well as its unit.
+
+Whatever this action returns is then applied to the canonical game via
+~doAction()~. Note however that ~doAction()~ is side-effect free, as it returns
+a new instance of the game, with that move applied. Risk-Agents ought to return
+objects of the class ~RiskAction~.
+
+To access the board ~getBoard()~ can be used. This method returns a copy of the
+games internal object of type ~RiskBoard~. This class provides a number of
+helpful methods which can be used to determine the current state of the game. In
+a sense it can also be used to generate legal moves, or rather check if a move
+is legal. Check the specific javadoc for explanations.
+
+Objects of type ~RiskAction~ can be generated via their classes static methods.
+For example ~RiskAction.attack(src, dst, trp)~ generates a ~RiskAction~ with the
+intent to attack ~dst~ from ~src~ with ~trp~ troops. The other actions are
+generated in a similar fashion. Check the javadoc for explanations.
+
+The game is also able to generate all legal actions by itself.
+~getPossibleActions()~ is precisely for that purpose. Note that in uncanonical
+games the number of generated actions might be larger than the actual legal
+ones, depending on the state of hidden information. However
+~getPossibleActions()~ never generates illegal moves, and the actions of the
+submitted game are the only possible ones.
+
+Besides generating moves the game also has a embedded utility evaluation. The
+utility value is used to determine which player has won. It can be accessed via
+~getUtilityValue()~. Moreover the game interface also provides a heuristic
+evaluation via ~getHeuristicValue()~ which is a rather simple way to predict
+general trend of the utility values throughout the game. In the case of Risk
+~getUtilityValue()~ returns $1$ if and only if the current player has won, and
+$0$ otherwise. ~getHeuristicValue()~ returns the number of occupied territories.
+
+~isValidAction()~ only returns true if and only if the action would be a valid
+action for that game, and can be used to verify before returning the actual
+action.
