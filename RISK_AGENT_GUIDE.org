@@ -1,9 +1,10 @@
 #+TITLE: Developing an agent for sge-risk
 #+AUTHOR: Lukas Grassauer
 #+EMAIL: entze@grassauer.eu
-#+DATE: last changed: 2019-09-13
+#+DATE: last changed: 2019-11-20
+#+OPTIONS: ^:nil
 
-Also consider reading the manual for Strategy Game Engine
+Please also refer to "SGE-Manual
 
 * Running a game of risk
 
@@ -27,7 +28,8 @@ java -jar sge-1.0.0.jar match
 
 #+END_SRC
 
-Note that the agents play in that exact order.
+Note that the agents play in that exact order. To limit the calculation time to
+$n$ seconds use ~--computation-time~ $n$ or the equivalent short option ~-c~ $n$.
 
 * Running a tournament
 
@@ -40,6 +42,7 @@ java -jar sge-1.0.0.jar tournament
 
 #+END_SRC
 
+<<<<<<< Updated upstream
 * Implementing an agent
 
 The agent has to implement the Java-Interface
@@ -79,8 +82,15 @@ utility value is used to determine which player has won. It can be accessed via
 evaluation via ~getHeuristicValue()~ which is a rather simple way to predict
 general trend of the utility values throughout the game. In the case of Risk
 ~getUtilityValue()~ returns $1$ if and only if the current player has won, and
-$0$ otherwise. ~getHeuristicValue()~ returns the number of occupied territories.
+$0$ otherwise. ~getHeuristicValue()~ returns the number of occupied territories
+of the current player without argument and with argument the number of occupied
+territories of that specified player.
 
 ~isValidAction()~ only returns true if and only if the action would be a valid
 action for that game, and can be used to verify before returning the actual
 action.
+
+* Quickstart with RiskAgent
+
+Simply fork from attached ~RiskAgent~ to start from a simple agent that
+compiles, it might help in reducing headaches.
