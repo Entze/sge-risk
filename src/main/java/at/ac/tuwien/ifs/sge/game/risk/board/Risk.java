@@ -5,6 +5,7 @@ import at.ac.tuwien.ifs.sge.game.Dice;
 import at.ac.tuwien.ifs.sge.game.Game;
 import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskConfiguration;
 import at.ac.tuwien.ifs.sge.game.risk.util.PriestLogic;
+import at.ac.tuwien.ifs.sge.util.Util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -868,6 +869,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
 
   @Override
   public String toTextRepresentation() {
+    //TODO: untangle this mess
     StringBuilder map = new StringBuilder(board.getMap());
     final Map<Integer, RiskTerritory> territories = board.getTerritories();
 
@@ -875,36 +877,64 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       String target = "[" + i + "]";
       int occupantPlayerId = territories.get(i).getOccupantPlayerId();
       int troops = territories.get(i).getTroops();
-      String replacement = String.format("%d:%d", occupantPlayerId, troops);
+      String troopsString = String.valueOf(troops);
+      if (troops >= 1000) {
+        troops /= 1000;
+        troopsString = troops + "k";
+      }
+      String replacement = String.format("%d:%s", occupantPlayerId, troopsString);
       int pre = map.indexOf(target);
       int post = pre + (target.length() - 1);
 
       int toCutWhiteSpace = replacement.length() - 1;
 
-      while (toCutWhiteSpace != 0) {
-        int cutFrom;
-        if (toCutWhiteSpace % 2 == 0) {
-          cutFrom = pre;
-        } else {
-          cutFrom = post;
-        }
-        char c;
-        do {
-          cutFrom += (toCutWhiteSpace % 2) == 0 ? -1 : 1;
-          c = map.charAt(cutFrom);
-        } while (!(('0' < c && c <= '9') || ('a' <= c && c < 'z')));
+      int preStop = pre;
+      int preWhiteSpace = 0;
 
-        if (toCutWhiteSpace > 0) {
-          c = decreaseLexicographical(c);
-        } else {
-          c = increaseLexicographical(c);
-        }
-        map.setCharAt(cutFrom, c);
-
-        toCutWhiteSpace += toCutWhiteSpace < 0 ? 1 : -1; // approach 0 step by step
+      char c = '0';
+      while (0 < preStop && (('0' <= c && c <= '9') || ('a' <= c && c <= 'z'))) {
+        preWhiteSpace += Integer.parseInt(String.valueOf(c), Character.MAX_RADIX);
+        preStop--;
+        c = map.charAt(preStop);
       }
 
-      map = map.replace(pre, post + 1, "[" + replacement + "]");
+      if (('0' <= c && c <= '9') || ('a' <= c && c <= 'z')) {
+        preWhiteSpace += Integer.parseInt(String.valueOf(c), Character.MAX_RADIX);
+      }
+
+      c = '0';
+
+      int postStop = post;
+      int postWhiteSpace = 0;
+
+      while (postStop < (map.length() - 1) && (('0' <= c && c <= '9') || ('a' <= c && c <= 'z'))) {
+        postWhiteSpace += Integer.parseInt(String.valueOf(c), Character.MAX_RADIX);
+        postStop++;
+        c = map.charAt(postStop);
+      }
+
+      if (('0' <= c && c <= '9') || ('a' <= c && c <= 'z')) {
+        postWhiteSpace += Integer.parseInt(String.valueOf(c), Character.MAX_RADIX);
+      }
+
+      int leftOverWhiteSpace = Math.max(0, preWhiteSpace + postWhiteSpace - toCutWhiteSpace);
+
+      preWhiteSpace = leftOverWhiteSpace % 2;
+      leftOverWhiteSpace -= preWhiteSpace;
+
+      preWhiteSpace += leftOverWhiteSpace / 2;
+      postWhiteSpace = leftOverWhiteSpace / 2;
+
+      int preStart = Math.max(0, preStop + 1);
+      int preEnd = Math.max(0, pre);
+      map.replace(preStart, preEnd,
+          convertIntToAlphaNumericWhitespaceWithWidth(preWhiteSpace, preEnd - preStart));
+      int postStart = Math.min(post + 1, map.length());
+      int postEnd = Math.min(postStop, map.length());
+      map.replace(postStart, postEnd,
+          convertIntToAlphaNumericWhitespaceWithWidth(postWhiteSpace, postEnd - postStart));
+
+      map.replace(pre, post + 1, "[" + replacement + "]");
     }
 
     {
@@ -931,6 +961,21 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     }
 
     return map.toString();
+  }
+
+  private static String convertIntToAlphaNumericWhitespaceWithWidth(int i, int width) {
+    if (width <= 0) {
+      return "";
+    }
+    int div = i / Character.MAX_RADIX;
+    int rem = i % Character.MAX_RADIX;
+
+    StringBuilder stringBuilder = Util.appendNTimes(new StringBuilder(), 'z', div)
+        .append(Integer.toString(rem, Character.MAX_RADIX));
+
+    Util.appendNTimes(stringBuilder, '0', width - Math.max(1, div + rem));
+
+    return stringBuilder.toString();
   }
 
 }

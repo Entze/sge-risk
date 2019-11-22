@@ -14,6 +14,7 @@ import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import at.ac.tuwien.ifs.sge.game.ActionRecord;
 import at.ac.tuwien.ifs.sge.game.risk.generators.RiskActionGenerator;
+import java.lang.module.Configuration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,7 +104,7 @@ public class RiskTest {
       territories.add(territory);
     });
     riskConfiguration.setTerritories(new ArrayList<>(territories));
-    riskConfiguration.setInitialTroops(new int[] {3});
+    riskConfiguration.setInitialTroops(new int[]{3});
     riskConfiguration.setMap("+-----+\n"
         + "|2[0]2|\n"
         + "+-----+\n"
@@ -267,7 +268,7 @@ public class RiskTest {
   public void test_game_doAction_initialSelect_2() {
     RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
     config.setMaxNumberOfPlayers(3);
-    config.setInitialTroops(new int[] {1});
+    config.setInitialTroops(new int[]{1});
     config.setChooseInitialTerritories(true);
 
     Risk risk = new Risk(config, 3);
@@ -363,7 +364,8 @@ public class RiskTest {
     assertEquals(Set.of(RiskAction.playCards(0)), risk.getPossibleActions());
     risk = (Risk) risk.doAction(RiskAction.playCards(0));
     assertTrue(
-        risk.getPossibleActions().contains(RiskAction.bonusTroopsFromCards(0)) || risk.getPossibleActions()
+        risk.getPossibleActions().contains(RiskAction.bonusTroopsFromCards(0)) || risk
+            .getPossibleActions()
             .contains(RiskAction.bonusTroopsFromCards(1)));
     risk = (Risk) risk.doAction(risk.determineNextAction());
 
@@ -1129,4 +1131,20 @@ public class RiskTest {
 
 
   }
+
+  @Test
+  public void test_tooSmallFields() {
+    RiskConfiguration config = RiskConfiguration.getYaml().load(simpleConfigYaml);
+    config.setInitialTroops(new int[]{10000});
+
+    Risk risk = new Risk(config, 2);
+
+    for (int i = 0; i < 1999; i++) {
+      risk = (Risk) risk.doAction(risk.getPossibleActions().stream().findFirst().get());
+    }
+
+    System.out.println(risk.toTextRepresentation());
+
+  }
+
 }
