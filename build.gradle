@@ -44,6 +44,7 @@ jar {
     manifest {
         attributes 'Sge-Type': 'game'
         attributes 'Game-Class': 'at.ac.tuwien.ifs.sge.game.risk.board.Risk'
+        attributes 'Main-Class': 'at.ac.tuwien.ifs.sge.engine.risk.RiskMapGenerator'
     }
 }
 
