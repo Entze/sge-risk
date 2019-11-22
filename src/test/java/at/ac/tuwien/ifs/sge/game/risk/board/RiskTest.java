@@ -363,8 +363,8 @@ public class RiskTest {
     assertEquals(Set.of(RiskAction.playCards(0)), risk.getPossibleActions());
     risk = (Risk) risk.doAction(RiskAction.playCards(0));
     assertTrue(
-        risk.getPossibleActions().contains(RiskAction.bonusCards(0)) || risk.getPossibleActions()
-            .contains(RiskAction.bonusCards(1)));
+        risk.getPossibleActions().contains(RiskAction.bonusTroopsFromCards(0)) || risk.getPossibleActions()
+            .contains(RiskAction.bonusTroopsFromCards(1)));
     risk = (Risk) risk.doAction(risk.determineNextAction());
 
     int reinforcementsLeft = risk.getBoard().reinforcementsLeft(risk.getCurrentPlayer());
@@ -429,9 +429,9 @@ public class RiskTest {
     assertEquals(Set.of(RiskAction.playCards(0)), playerRisk.getPossibleActions());
     playerRisk = (Risk) playerRisk.doAction(RiskAction.playCards(0));
     assertTrue(
-        playerRisk.getPossibleActions().contains(RiskAction.bonusCards(0)) || playerRisk
+        playerRisk.getPossibleActions().contains(RiskAction.bonusTroopsFromCards(0)) || playerRisk
             .getPossibleActions()
-            .contains(RiskAction.bonusCards(1)));
+            .contains(RiskAction.bonusTroopsFromCards(1)));
 
     playerRisk.determineNextAction(); //TODO
   }

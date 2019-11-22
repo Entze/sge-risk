@@ -1,29 +1,29 @@
 #+TITLE: Developing an agent for sge-risk
 #+AUTHOR: Lukas Grassauer
 #+EMAIL: entze@grassauer.eu
-#+DATE: last changed: 2019-11-20
+#+DATE: last changed: 2019-11-22
 #+OPTIONS: ^:nil
 
-Please also refer to "SGE-Manual
+Please also refer to the "SGE-Manual"
 
 * Running a game of risk
 
 #+BEGIN_SRC bash
 
-java -jar sge-1.0.0.jar match
- --file=sge-risk-1.0.0.jar
+java -jar sge-1.0.0.jar match \
+ --file=sge-risk-1.0.0.jar \
  --directory=agents
 
 #+END_SRC
 
-If you want specific to play against each other add them via ~--file~ instead of
-~--directory~ or use their Agent-Name like so:
+If you want specific agents to play against each other add them via ~--file~
+instead of ~--directory~ or use their Agent-Name like so:
 
 #+BEGIN_SRC bash
 
-java -jar sge-1.0.0.jar match
- --file=sge-risk-1.0.0.jar
- --directory=agents
+java -jar sge-1.0.0.jar match \
+ --file=sge-risk-1.0.0.jar \
+ --directory=agents \
  -a MctsAgent AlphaBetaAgent
 
 #+END_SRC
@@ -35,14 +35,13 @@ $n$ seconds use ~--computation-time~ $n$ or the equivalent short option ~-c~ $n$
 
 #+BEGIN_SRC bash
 
-java -jar sge-1.0.0.jar tournament
- --file=sge-risk-1.0.0.jar
- --directory=agents
+java -jar sge-1.0.0.jar tournament \
+ --file=sge-risk-1.0.0.jar \
+ --directory=agents \
  --mode="Double_Round_Robin"
 
 #+END_SRC
 
-<<<<<<< Updated upstream
 * Implementing an agent
 
 The agent has to implement the Java-Interface
@@ -92,5 +91,67 @@ action.
 
 * Quickstart with RiskAgent
 
-Simply fork from attached ~RiskAgent~ to start from a simple agent that
+Simply fork from the attached ~RiskAgent~ to start from a simple agent that
 compiles, it might help in reducing headaches.
+
+* Other Tips
+
+** Canonical Games
+
+A game is called canonical if all information is perfect and complete, which SGE
+models all games to. Indeterminateness are resolved by a "World"-Player which
+uses randomness to determine their moves. Uncanonical games are stripped of some
+information. These games are passed to the agents.
+
+** Dice Throws
+
+In the board game risk parts of the game are determined by rolling dice. SGE
+does not model this directly, but rather the outcomes of repeated dice throws,
+which are how many troops are lost. Advancing the game in an agent can either be
+done by using a random number generator or by the ~Game.determineNextAction()~
+method. Which chooses an outcome based on the probabilities.
+
+** Determinacy
+
+An uncanonical game is uniquely identified by the list of moves it lead to.
+Canonical games can have initial randomness (shuffle of a deck of cards -
+modelling this would result in an enormous game tree) which
+is not shown to the agents.
+
+** Game tree
+
+SGE assumes the game tree has a finite width. If there are multiple possible
+moves due to indeterminacy then all possible outcomes are given as next possible
+actions.
+
+** Default Agents
+
+SGE provides three default agents:
+
+- RandomAgent
+  + An agent which chooses from all possible actions a random one.
+- AlphaBetaAgent
+  + An agent which uses (aggressive) alpha beta pruning to determine the next
+    best action.
+- MCTSAgent
+  + An agent which uses Monte-Carlo-Tree-Search to find the most likely winning
+    action.
+
+Be wary however these agents are not implemented for Risk directly but rather
+use an abstract notion of games, so the heuristics are rather bad, i.e. they do
+not model the game particularly well. For example do they not consider that a
+territory is easier to be captured if they do not have a lot of troops in this
+territory (well they do, but not in an explicit sense). Hence beating them might
+not be too difficult.
+
+** Use fuzzy heuristics
+
+The game tree for Risk is rather large. A simple suggestion to reduce the width
+would be to not make too much of a difference if a territory has for example 10
+or 11 troops. There are charts on the probabilities and combining very similar
+probabilities might be worth it.
+
+Additionally if a player only has a few territories left it might take a long
+time to finish the game. This can result in a deep game tree which is a
+computational feat. Reduction is possible by cutting off after winning/losing is
+improbable.

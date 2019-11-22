@@ -253,7 +253,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
   private Set<RiskAction> bonusGPA() {
     return IntStream
         .rangeClosed(board.getMinMatchingTerritories(), board.getMaxMatchingTerritories())
-        .mapToObj(RiskAction::bonusCards).collect(Collectors.toUnmodifiableSet());
+        .mapToObj(RiskAction::bonusTroopsFromCards).collect(Collectors.toUnmodifiableSet());
   }
 
   private Set<RiskAction> reinforceGPA() {
@@ -819,8 +819,8 @@ public class Risk implements Game<RiskAction, RiskBoard> {
     int min = board.getMinMatchingTerritories();
     int max = board.getMaxMatchingTerritories();
 
-    if (max - min == 0) {
-      return RiskAction.bonusCards(max);
+    if (min == max) {
+      return RiskAction.bonusTroopsFromCards(max);
     }
 
     int drawn = max - min;
@@ -840,7 +840,7 @@ public class Risk implements Game<RiskAction, RiskBoard> {
       }
     }
 
-    return RiskAction.bonusCards(bonus);
+    return RiskAction.bonusTroopsFromCards(bonus);
   }
 
   @Override
