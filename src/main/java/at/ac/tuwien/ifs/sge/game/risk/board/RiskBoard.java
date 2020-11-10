@@ -488,6 +488,50 @@ public class RiskBoard {
     return territories.containsKey(territoryId);
   }
 
+  /**
+   * Returns all continents mapped from their continentId.
+   *
+   * @return a map of territories mapped by their territoryId.
+   */
+  public Map<Integer, RiskContinent> getContinents() {
+    return continents;
+  }
+
+  /**
+   * Returns a set of all continentIds present on this board. This is equivalent to
+   * getContinents().keySet().
+   *
+   * @return a set of all territoryIds.
+   */
+  public Set<Integer> getContinentIds() {
+    return continents.keySet();
+  }
+
+  /**
+   * Checks if a given continentId is present on the board. This is equivalent to
+   * getContinents().containsKey(continentId).
+   *
+   * @param continentId the id of the continent
+   * @return true iff present on the board, otherwise false.
+   */
+  public boolean isContinent(int continentId) {
+    return continents.containsKey(continentId);
+  }
+
+
+  /**
+   * Returns the number of bonus troops if the continent is taken. If continentId is not present on
+   * the board 0 is returned instead.
+   *
+   * @param continentId the id of the continent
+   * @return the number of bonus troops if the continent is taken
+   */
+  public int getContinentBonus(int continentId) {
+    if (isContinent(continentId)) {
+      return continents.get(continentId).getTroopBonus();
+    }
+    return 0;
+  }
 
   /**
    * Returns which player currently occupies the given territory. A negative number indicates either
