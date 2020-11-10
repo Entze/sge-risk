@@ -2,14 +2,14 @@ package at.ac.tuwien.ifs.sge.game.risk.board;
 
 import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskConfiguration;
 import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskContinentConfiguration;
+import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskMissionConfiguration;
 import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskTerritoryConfiguration;
 import at.ac.tuwien.ifs.sge.game.risk.mission.RiskMission;
 import at.ac.tuwien.ifs.sge.game.risk.mission.RiskMissionType;
+import at.ac.tuwien.ifs.sge.game.risk.util.PriestLogic;
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
-import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskMissionConfiguration;
-import at.ac.tuwien.ifs.sge.game.risk.util.PriestLogic;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -584,19 +584,39 @@ public class RiskBoard {
     return nonDeployedReinforcements[player];
   }
 
-  boolean isReinforcementPhase() {
+  /**
+   * Returns true iff this board is in the Reinforcement Phase.
+   *
+   * @return true iff this board is in the Reinforcement Phase.
+   */
+  public boolean isReinforcementPhase() {
     return phase == RiskPhase.REINFORCEMENT;
   }
 
-  boolean isAttackPhase() {
+  /**
+   * Returns true iff this board is in the Attack Phase.
+   *
+   * @return true iff this board is in the Attack Phase.
+   */
+  public boolean isAttackPhase() {
     return phase == RiskPhase.ATTACK;
   }
 
-  boolean isOccupyPhase() {
+  /**
+   * Returns true iff this board is in the Occupy Phase.
+   *
+   * @return true iff this board is in the Occupy Phase.
+   */
+  public boolean isOccupyPhase() {
     return phase == RiskPhase.OCCUPY;
   }
 
-  boolean isFortifyPhase() {
+  /**
+   * Returns true iff this board is in the Fortify Phase.
+   *
+   * @return true iff this board is in the Fortify Phase.
+   */
+  public boolean isFortifyPhase() {
     return phase == RiskPhase.FORTIFY;
   }
 
