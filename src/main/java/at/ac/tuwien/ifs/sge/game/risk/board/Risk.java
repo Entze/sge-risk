@@ -959,7 +959,15 @@ public class Risk implements Game<RiskAction, RiskBoard> {
         i++;
       }
     }
-
+    map.append('\n');
+    for (int p = 0; p < getNumberOfPlayers(); p++) {
+      Set<Integer> playerTerritoryIds = board.getTerritoriesOccupiedByPlayer(p);
+      int playerTroops = playerTerritoryIds.stream().mapToInt(board::getTerritoryTroops).sum();
+      map.append("Player ").append(p).append(':').append('\n')
+          .append('\t').append("Territories: ").append(playerTerritoryIds.size()).append('\n')
+          .append('\t').append("Troops: ").append(playerTroops).append('\n');
+    }
+    map.deleteCharAt(map.length() - 1);
     return map.toString();
   }
 
