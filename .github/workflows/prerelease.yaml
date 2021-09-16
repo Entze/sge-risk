@@ -26,7 +26,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: manual
-          path: $${{ matrix.file }}
+          path: ${{ matrix.file }}
   jars:
     name: Build jar, shadowJar, javadoc and sources
     runs-on: ubuntu-20.04
@@ -58,13 +58,13 @@ jobs:
       - name: Upload javadoc
         uses: actions/upload-artifact@v2
         with:
-          name: sources
+          name: javadoc
           path: build/libs/sge-risk-*.*.*-SNAPSHOT-javadoc.jar
       - name: Upload shadow
         uses: actions/upload-artifact@v2
         with:
-          name: sources
-          path: build/libs/sge-risk-*.*.*-SNAPSHOT-shadow.jar
+          name: shadow
+          path: build/libs/sge-risk-*.*.*-SNAPSHOT-exe.jar
 
   github_packages:
     name: Release as github package
