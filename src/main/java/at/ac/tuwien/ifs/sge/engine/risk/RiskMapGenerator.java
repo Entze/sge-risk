@@ -17,7 +17,10 @@ public class RiskMapGenerator implements Callable<Void> {
   private Path territories;
 
   public static void main(String[] args) {
-    CommandLine.call(new RiskMapGenerator(), args);
+    RiskMapGenerator rmg = new RiskMapGenerator();
+    CommandLine cli = new CommandLine(rmg);
+
+    cli.execute(args);
   }
 
 
