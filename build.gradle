@@ -2,11 +2,11 @@ plugins {
     id 'java'
     id 'idea'
     id "maven-publish"
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
 group 'at.ac.tuwien.ifs.sge'
-version '1.0.2'
+version '1.0.3-SNAPSHOT'
 
 sourceCompatibility = 1.11
 
@@ -80,9 +80,9 @@ publishing {
                 }
 
                 scm {
-                    url = "https://gitlab.com/Entze/sge-risk"
-                    connection = "https://gitlab.com/Entze/sge-risk.git"
-                    developerConnection = "git@gitlab.com:Entze/sge-risk.git"
+                    url = "https://github.com/Entze/sge-risk"
+                    connection = "https://github.com/Entze/sge-risk.git"
+                    developerConnection = "git@github.com:Entze/sge-risk.git"
                 }
             }
         }
