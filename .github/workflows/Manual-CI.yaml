@@ -24,4 +24,4 @@ jobs:
             --from org
             --to latex
             --output ${{ matrix.file }}.pdf
-            RULESET.org
+            ${{ matrix.file }}.org
