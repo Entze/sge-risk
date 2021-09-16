@@ -87,6 +87,16 @@ publishing {
             }
         }
     }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Entze/sge-risk")
+            credentials {
+                username = project.findProperty("gpr.user") ?: findProperty("github.actor") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: findProperty("github.token") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
 
 test {
