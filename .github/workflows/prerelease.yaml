@@ -26,7 +26,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: manual
-          path: ${{ matrix.file }}
+          path: ${{ matrix.file }}.pdf
   jars:
     name: Build jar, shadowJar, javadoc and sources
     runs-on: ubuntu-20.04
