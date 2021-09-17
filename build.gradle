@@ -26,7 +26,7 @@ dependencies {
     implementation 'com.google.guava:guava:30.1.1-jre'
     implementation 'org.yaml:snakeyaml:1.29'
     implementation 'info.picocli:picocli:4.6.1'
-    implementation 'at.ac.tuwien.ifs.sge:sge:1.0.3-SNAPSHOT'
+    implementation 'at.ac.tuwien.ifs.sge:sge:1.0.3'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'com.pholser:junit-quickcheck-core:1.0'
     testImplementation 'com.pholser:junit-quickcheck-generators:1.0'
