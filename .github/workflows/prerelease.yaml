@@ -19,6 +19,7 @@ jobs:
         uses: docker://pandoc/latex:2.19.2.0
         with:
           args: >-
+            --resource-path manual
             --from org
             --to latex
             --output ${{ matrix.file }}.pdf
