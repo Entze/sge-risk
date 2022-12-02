@@ -25,4 +25,4 @@ jobs:
             --from org
             --to latex
             --output ${{ matrix.file }}.pdf
-            ${{ matrix.file }}.org
+            manual/${{ matrix.file }}.org
