@@ -43,6 +43,9 @@ jobs:
       - name: Build with Gradle
         shell: bash
         run: ./gradlew --parallel jar shadowJar javadocJar sources
+        env:
+          GITHUB_ACTOR: ${{ secrets.GITHUB_ACTOR }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Jar
         uses: actions/upload-artifact@v3
         with:
@@ -100,6 +103,7 @@ jobs:
       - name: Publish package
         run: ./gradlew publish
         env:
+          GITHUB_ACTOR: ${{ secrets.GITHUB_ACTOR }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   github_release:
@@ -123,5 +127,6 @@ jobs:
             manual/RULESET.pdf
             manual/RISK_AGENT_GUIDE.pdf
         env:
+          GITHUB_ACTOR: ${{ secrets.GITHUB_ACTOR }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
