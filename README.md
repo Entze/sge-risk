@@ -1,5 +1,6 @@
 # SGE-Risk
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Entze/sge-risk/Java%20CI?logo=github&style=for-the-badge) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Entze/sge-risk/Manual%20CI?color=lightgrey&label=Manual&logo=github&style=for-the-badge)
+![GitHub Build Workflow Status](https://img.shields.io/github/actions/workflow/status/Entze/sge-risk/Java-CI.yaml?logo=github&style=for-the-badge)
+![GitHub Manual Workflow Status](https://img.shields.io/github/actions/workflow/status/Entze/sge-risk/Manual-CI.yaml?color=lightgray&logo=github&style=for-the-badge)
 
 ![Gradle 7.6](https://img.shields.io/badge/Gradle-02303A.svg?style=for-the-badge&logo=Gradle&logoColor=white&label=7.6) ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=java&logoColor=white&label=1.11)
 
