@@ -134,3 +134,4 @@ gradle-app.setting
 
 *.png
 *.pdf
+manual/versions.yaml
