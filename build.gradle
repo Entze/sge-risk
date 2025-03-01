@@ -2,18 +2,19 @@ plugins {
     id 'java'
     id 'idea'
     id "maven-publish"
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'com.gradleup.shadow' version '8.3.6'
 }
 
-group 'at.ac.tuwien.ifs.sge'
-version '1.0.5'
+group = 'at.ac.tuwien.ifs.sge'
+version = '1.0.5'
 
-sourceCompatibility = 1.11
-
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+}
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    maven { url = 'https://jitpack.io' }
 }
 
 dependencies {
@@ -51,52 +52,9 @@ javadoc {
     }
 }
 
-
-publishing {
-    publications {
-        mavenPublication(MavenPublication) {
-            from components.java
-            pom {
-                name = project.getName()
-                description = "A clone of the game \"Risk\" implemented in sge."
-                licenses {
-                    license {
-                        name = "GNU Affero General Public License version 3"
-                        url = "https://opensource.org/licenses/agpl-v3.html"
-                        distribution = "repo"
-                    }
-                }
-                developers {
-                    developer {
-                        id = "entze"
-                        name = "Lukas Grassauer"
-                        email = "entze@grassauer.eu"
-                    }
-                }
-
-                scm {
-                    url = "https://github.com/Entze/sge-risk"
-                    connection = "https://github.com/Entze/sge-risk.git"
-                    developerConnection = "git@github.com:Entze/sge-risk.git"
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Entze/sge-risk")
-            credentials {
-                username = project.findProperty("gpr.user") ?: findProperty("github.actor") ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") ?: findProperty("github.token") ?: System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
-}
-
 test {
 
-    useJUnit()
+    useJUnitPlatform()
     maxHeapSize = '1G'
 }
 
