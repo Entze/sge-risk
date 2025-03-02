@@ -22,7 +22,7 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.yaml:snakeyaml:1.29")
     implementation("info.picocli:picocli:4.7.0")
-    implementation("com.gitlab.StrategyGameEngine:strategy-game-engine:v1.0.4")
+    implementation("com.gitlab.StrategyGameEngine:strategy-game-engine:v1.0.7")
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.pholser:junit-quickcheck-core:1.0")
     testImplementation("com.pholser:junit-quickcheck-generators:1.0")
@@ -53,7 +53,6 @@ javadoc {
 }
 
 test {
-
     useJUnitPlatform()
     maxHeapSize = '1G'
 }
