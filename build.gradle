@@ -32,8 +32,8 @@ dependencies {
 jar {
     manifest {
         attributes("Sge-Type": "game",
-                    "Game-Class": "at.ac.tuwien.ifs.sge.game.risk.board.Risk",
-                    "Main-Class": "at.ac.tuwien.ifs.sge.engine.risk.RiskMapGenerator")
+                "Game-Class": "at.ac.tuwien.ifs.sge.game.risk.board.Risk",
+                "Main-Class": "at.ac.tuwien.ifs.sge.engine.risk.RiskMapGenerator")
     }
 }
 
@@ -43,7 +43,7 @@ java {
 }
 
 shadowJar {
-    archiveClassifier.set('exe');
+    archiveClassifier.set('exe')
 }
 
 javadoc {
@@ -61,11 +61,11 @@ test {
 tasks.register('generateVersionsYaml') {
     description = 'Generate versions.yaml file with project metadata'
     group = 'Documentation'
-    
+
     doLast {
         def versionsFile = file('manual/versions.yaml')
         versionsFile.parentFile.mkdirs()
-        
+
         // Extract the SGE_VERSION dependency version
         def sgeVersion = ""
         configurations.compileClasspath.dependencies.each { dependency ->
@@ -73,7 +73,7 @@ tasks.register('generateVersionsYaml') {
                 sgeVersion = dependency.version
             }
         }
-        
+
         // If the dependency wasn't found in compileClasspath, check implementation configuration
         if (sgeVersion.isEmpty()) {
             configurations.implementation.dependencies.each { dependency ->
@@ -83,17 +83,17 @@ tasks.register('generateVersionsYaml') {
             }
         }
 
-        if(sgeVersion.startsWith("v")){
+        if (sgeVersion.startsWith("v")) {
             sgeVersion = sgeVersion.substring(1)
         }
-        
+
         def yaml = """
 # Automatically generated from Gradle properties
 SGE_VERSION: ${sgeVersion ?: "not-found"}
 JAVA_VERSION: ${project.sourceCompatibility}
 SGE_RISK_VERSION: ${project.version} 
 """.trim()
-        
+
         versionsFile.text = yaml
         println "Generated ${versionsFile.absolutePath}"
     }
