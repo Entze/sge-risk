@@ -1,5 +1,2 @@
 jdk:
-  - openjdk11
-before_install:
-  - mv build.gradle _build.gradle
-  - mv jitpack.gradle build.gradle
+  - openjdk21
