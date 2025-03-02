@@ -19,8 +19,8 @@ repositories {
 
 dependencies {
     implementation("org.jgrapht:jgrapht-core:1.5.2")
-    implementation("org.yaml:snakeyaml:1.29")
     implementation("com.google.guava:guava:33.4.0-jre")
+    implementation("org.yaml:snakeyaml:2.4")
     implementation("info.picocli:picocli:4.7.6")
     implementation("com.gitlab.StrategyGameEngine:strategy-game-engine:v1.0.7")
     testImplementation("junit:junit:4.13.2")

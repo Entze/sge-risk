@@ -55,9 +55,11 @@ import java.util.List;
 import java.util.Objects;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.inspector.TagInspector;
 import org.yaml.snakeyaml.representer.Representer;
 
 public class RiskConfiguration {
@@ -249,11 +251,16 @@ public class RiskConfiguration {
 
   public static Yaml getYaml() {
     if (riskConfigurationYaml == null) {
-      Constructor constructor = new Constructor(RiskConfiguration.class);
-      Representer representer = new Representer();
-      representer.getPropertyUtils().setSkipMissingProperties(true);
+      LoaderOptions loaderOptions = new LoaderOptions();
+      TagInspector tagInspector = tag -> tag.getClassName().equals(RiskConfiguration.class.getName());
+      loaderOptions.setTagInspector(tagInspector);
       DumperOptions dumperOptions = new DumperOptions();
       dumperOptions.setDefaultFlowStyle(FlowStyle.AUTO);
+
+      Constructor constructor = new Constructor(RiskConfiguration.class, loaderOptions);
+      Representer representer = new Representer(dumperOptions);
+      representer.getPropertyUtils().setSkipMissingProperties(true);
+
       TypeDescription riskConfigurationDescription = new TypeDescription(RiskConfiguration.class);
       riskConfigurationDescription
           .addPropertyParameters("continents", RiskContinentConfiguration.class);
