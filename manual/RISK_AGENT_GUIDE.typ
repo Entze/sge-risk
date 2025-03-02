@@ -49,7 +49,7 @@ If you want specific agents to play against each other add them via
     + versions.SGE_RISK_VERSION
     + "-exe.jar \\\n"
     + "--directory=agents \\\n"
-    + "--agents MctsAgent AlphaBetaAgent",
+    + "--agent MctsAgent AlphaBetaAgent",
 )
 
 Note that the agents play in that exact order. To limit the calculation
