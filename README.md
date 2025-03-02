@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Entze:sge-risk:v1.0.6")
+    implementation("com.github.Entze:sge-risk:v1.0.7")
 }
 ```
 
@@ -30,13 +30,13 @@ This produces four jar files (in `build/libs/`):
 
 One executable
 
-- `sge-risk-1.0.6-exe.jar` (Game-jar & Map Generator Executable)
+- `sge-risk-1.0.7-exe.jar` (Game-jar & Map Generator Executable)
 
 And three jars usually used for development
 
-- `sge-risk-1.0.6.jar` (Library)
-- `sge-risk-1.0.6-sources.jar` (Sources)
-- `sge-risk-1.0.6-javadoc.jar` (Documentation)
+- `sge-risk-1.0.7.jar` (Library)
+- `sge-risk-1.0.7-sources.jar` (Sources)
+- `sge-risk-1.0.7-javadoc.jar` (Documentation)
 
 ### Map Generator
 
@@ -63,7 +63,7 @@ The map generator compresses the whitespace in map strings.
 To use:
 
 ```bash
-java -jar sge-risk-1.0.6-exe.jar [MAPFILE] [TERRITORIESFILE]
+java -jar sge-risk-1.0.7-exe.jar [MAPFILE] [TERRITORIESFILE]
 ```
 
 The map file is an ascii image. `X`s represent the position of the troop indicator. The territories file lists the names
