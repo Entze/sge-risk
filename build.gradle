@@ -48,6 +48,38 @@ shadowJar {
     archiveClassifier.set('exe')
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = 'SGE - Risk'
+                description = 'A Risk clone written in SGE.'
+                url = 'https://gitlab.com/StrategyGameEngine/sge-risk'
+                licenses {
+                    license {
+                        name = "GNU Affero General Public License version 3"
+                        url = "https://opensource.org/licenses/agpl-v3.html"
+                        distribution = "repo"
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'entze'
+                        name = 'Lukas Grassauer'
+                        email = 'lukas@grassauer.eu'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://gitlab.com/StrategyGameEngine/sge-risk'
+                    developerConnection = 'scm:git:ssh://gitlab.com/StrategyGameEngine/sge-risk.git'
+                    url = 'https://gitlab.com/StrategyGameEngine/sge-risk'
+                }
+            }
+        }
+    }
+}
+
 javadoc {
     if (JavaVersion.current().isJava9Compatible()) {
         options.addBooleanOption('html5', true)
