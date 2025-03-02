@@ -23,7 +23,9 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.4")
     implementation("info.picocli:picocli:4.7.6")
     implementation("com.gitlab.StrategyGameEngine:strategy-game-engine:v1.0.7")
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(platform('org.junit:junit-bom:5.12.0'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
     testImplementation("com.pholser:junit-quickcheck-core:1.0")
     testImplementation("com.pholser:junit-quickcheck-generators:1.0")
 }

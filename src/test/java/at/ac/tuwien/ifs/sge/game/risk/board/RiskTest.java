@@ -1,11 +1,5 @@
 package at.ac.tuwien.ifs.sge.game.risk.board;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskConfiguration;
 import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskContinentConfiguration;
 import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskTerritoryConfiguration;
@@ -14,7 +8,7 @@ import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
 import at.ac.tuwien.ifs.sge.game.ActionRecord;
 import at.ac.tuwien.ifs.sge.game.risk.generators.RiskActionGenerator;
-import java.lang.module.Configuration;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,9 +19,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.yaml.snakeyaml.Yaml;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @RunWith(JUnitQuickcheck.class)
 public class RiskTest {
@@ -195,16 +192,18 @@ public class RiskTest {
     System.out.println(risk.toTextRepresentation());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void test_game_creation_err_1() {
-    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 1);
-    fail();
+    assertThrowsExactly(IllegalArgumentException.class, () -> {
+      Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 1);
+    });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void test_game_creation_err_2() {
-    Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 7);
-    fail();
+    assertThrowsExactly(IllegalArgumentException.class, () -> {
+      Risk risk = new Risk(RiskConfiguration.RISK_DEFAULT_CONFIG, 7);
+    });
   }
 
   @Test
@@ -283,7 +282,7 @@ public class RiskTest {
 
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void test_game_doAction_initialSelect_err_selecting_already_selected() {
 
     RiskConfiguration riskConfiguration = RiskConfiguration.getYaml().load(simpleConfigYaml);
@@ -303,9 +302,10 @@ public class RiskTest {
 
     assertFalse(risk.isValidAction(RiskAction.select(0)));
 
-    risk.doAction(RiskAction.select(0));
-    fail();
-
+    final Risk ref = risk;
+    assertThrowsExactly(IllegalArgumentException.class, () -> {
+      ref.doAction(RiskAction.select(0));
+    });
   }
 
   @Test
@@ -370,7 +370,7 @@ public class RiskTest {
     risk = (Risk) risk.doAction(risk.determineNextAction());
 
     int reinforcementsLeft = risk.getBoard().reinforcementsLeft(risk.getCurrentPlayer());
-    assertTrue("Was: " + reinforcementsLeft, 4 == reinforcementsLeft || reinforcementsLeft == 6);
+    assertTrue(4 == reinforcementsLeft || reinforcementsLeft == 6, "Was: " + reinforcementsLeft);
 
     Set<RiskAction> expected = Stream.concat(
         IntStream.rangeClosed(2, 4).mapToObj(t -> RiskAction.reinforce(0, t)),
@@ -379,14 +379,14 @@ public class RiskTest {
 
     Set<RiskAction> actual = risk.getPossibleActions();
 
-    assertTrue("Expected: " + expected + " Actual: " + actual, actual.containsAll(expected));
+    assertTrue(actual.containsAll(expected), "Expected: " + expected + " Actual: " + actual);
 
     if (reinforcementsLeft == 4) {
-      assertEquals("Expected: " + expected + " Actual: " + actual, expected.size() + 2,
-          actual.size());
+      assertEquals(expected.size() + 2,
+          actual.size(), "Expected: " + expected + " Actual: " + actual);
     } else {
-      assertEquals("Expected: " + expected + " Actual: " + actual, expected.size() + 3,
-          actual.size());
+      assertEquals( expected.size() + 3,
+          actual.size(), "Expected: " + expected + " Actual: " + actual);
     }
 
   }
@@ -930,7 +930,7 @@ public class RiskTest {
       risk = risks.removeFirst();
       possibleActions.addAll(risk.getPossibleActions());
       for (RiskAction possibleAction : possibleActions) {
-        assertTrue(risk.getActionRecords().toString(), risk.isValidAction(possibleAction));
+        assertTrue(risk.isValidAction(possibleAction), risk.getActionRecords().toString());
         try {
           risks.addFirst((Risk) risk.doAction(possibleAction));
         } catch (IllegalArgumentException e) {
@@ -965,8 +965,8 @@ public class RiskTest {
 
       System.out.println(risk.getPreviousAction());
 
-      assertEquals(ActionRecord.iterableToString(risk.getActionRecords()), risk.isGameOver(),
-          risk.getPossibleActions().isEmpty());
+      assertEquals(risk.isGameOver(), risk.getPossibleActions().isEmpty(),
+              ActionRecord.iterableToString(risk.getActionRecords()));
 
       possibleActions.addAll(risk.getPossibleActions());
       for (RiskAction possibleAction : possibleActions) {
@@ -983,8 +983,8 @@ public class RiskTest {
       @From(RiskActionGenerator.class) RiskAction action) {
 
     RiskAction actual = RiskAction.fromString(action.toString());
-    assertEquals("Expected: " + action.toString() + " Actual: " + actual, action,
-        RiskAction.fromString(action.toString()));
+    assertEquals(action, RiskAction.fromString(action.toString()),
+            "Expected: " + action + " Actual: " + actual);
 
   }
 
