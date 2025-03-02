@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Entze:sge-risk:v1.0.7")
+    implementation("com.gitlab.Entze:sge-risk:v1.0.7")
 }
 ```
 
