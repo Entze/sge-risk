@@ -21,7 +21,7 @@ dependencies {
     implementation("org.jgrapht:jgrapht-core:1.5.2")
     implementation("org.yaml:snakeyaml:1.29")
     implementation("com.google.guava:guava:33.4.0-jre")
-    implementation("info.picocli:picocli:4.7.0")
+    implementation("info.picocli:picocli:4.7.6")
     implementation("com.gitlab.StrategyGameEngine:strategy-game-engine:v1.0.7")
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.pholser:junit-quickcheck-core:1.0")
